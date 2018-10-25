@@ -15,15 +15,15 @@ fsm_t myFSM[] = {
 // Variaveis globais
 volatile state_t curr_state;
 volatile leitura_t leituraAtual;
-volatile flag_t timer_20m = OFF, batimento_ativo = OFF, ciclo_oximetro = ON;
+volatile flag_t timer_amost = OFF, batimento_ativo = OFF, ciclo_oximetro = ON;
 volatile uint32_t temperatura;
 volatile oximetro_t oximetro;
 volatile uint16_t oxim_atual[TAM_ADC];
 volatile uint16_t acordar = TEMPO_SLEEP;
 
 // Funcoes locais
-static void batimentos();
-static inline void timerOn(void){TIMER_IRQS->TC0.BITS.TOIE = 1; timer_20m = OFF;}//cpl_bit(GPIO_B->PORT, PB4);
+static flag_t batimentos(flag_t status);
+static inline void timerOn(void){TIMER_IRQS->TC0.BITS.TOIE = 1; timer_amost = OFF;}//cpl_bit(GPIO_B->PORT, PB4);
 static inline void timerOff(void){ TIMER_IRQS->TC0.BITS.OCIEA = 0;}
 
 /* Inicializacoes */
@@ -60,17 +60,22 @@ void timerInit(){
 
 }
 
-void batimentos(){
+flag_t batimentos(flag_t status){
 
-	if(batimento_ativo == OFF){//TIMER_IRQS->TC1.BITS.OCIEA = 1;
+	flag_t ret;
+	if((batimento_ativo == OFF) && (status == ON)){
 		oximetro.batimento = 0;
 		batimento_ativo = ON;
 		set_bit(GPIO_B->PORT, PB4);
-	}else{//TIMER_IRQS->TC1.BITS.OCIEA = 0;
+		ret = OFF;
+	}else if(status == OFF){
 		batimento_ativo = OFF;
 		ciclo_oximetro = OFF;
 		clr_bit(GPIO_B->PORT, PB4);
+		ret = ON;
+		//fprintf(get_usart_stream(), " {tempo: %d}\n\r", oximetro.batimento);
 	}
+	return ret;
 
 }
 
@@ -121,7 +126,7 @@ void f_vermelho(){
 	set_bit(ADCS->ADC_SRA, ADSC);
 	while(tst_bit(ADCS->ADC_SRA, ADSC));
 
-	while(!timer_20m);
+	while(!timer_amost);
 
 	curr_state = INFRAV;
 
@@ -150,7 +155,7 @@ void f_infrav(){
 	set_bit(ADCS->ADC_SRA, ADSC);
 	while(tst_bit(ADCS->ADC_SRA, ADSC));
 
-	while(!timer_20m);
+	while(!timer_amost);
 
 	curr_state = PROCESSAMENTO;
 
@@ -161,52 +166,55 @@ void f_processamento(){
 	clr_bit(CTRL_LED->PORT, P_INFV);
 	clr_bit(CTRL_LED->PORT, P_VERM);
 
-	static uint16_t maximo = 0, minimo = 0xFFFF, erro;
-	static uint8_t flag_pico = OFF, flag_vale = OFF, flag_batimentos = OFF;
+	static uint16_t maximo = 0, erro, anterior = 0, atual = 0;
+	static flag_t flag_subindo = OFF, flag_descendo = OFF, flag_pronto = OFF, flag_vale = OFF;
 
 	oximetro.I_med = (oximetro.I_med + oxim_atual[IDC])/2;
 	oximetro.R_med = (oximetro.R_med + oxim_atual[RDC])/2;
+	atual = oxim_atual[IAC];
 
-	if(oxim_atual[IAC] > maximo){
-		maximo = oxim_atual[IAC];
-		erro = (maximo - maximo/10);
-		flag_pico = OFF;
-		flag_batimentos = OFF;
-		//cpl_bit(GPIO_B->PORT, PB4);
-	}else
-		flag_pico = ON;
+	if(atual > anterior){
+		flag_subindo = ON;
+		flag_descendo = OFF;
+	}else if(atual < anterior){
+		flag_subindo = OFF;
+		flag_descendo = ON;
+	}else{
+		if(flag_subindo){
+			fprintf(get_usart_stream(), "atual: %d;\n\r", atual);
+			if(atual > maximo){
+				maximo = atual;
+				erro = (maximo - maximo/10);
+				flag_pronto = batimentos(ON);
+			}
+			if((atual > erro) && (flag_vale)){
+				flag_pronto = batimentos(OFF);
+			}
+		}else if(flag_descendo){
+			flag_vale = ON;
+			//cpl_bit(GPIO_B->PORT, PB4);
+		}
 
-	if(oxim_atual[IAC] < minimo){
-		minimo = oxim_atual[IAC];
-		flag_vale = OFF;
-	}else if(flag_pico == ON)
-		flag_vale = ON;
+		flag_subindo = OFF;
+		flag_descendo = OFF;
 
-	if((flag_pico == ON) && (flag_batimentos == OFF)){
-		batimentos();
-		flag_batimentos = ON;
+		atraso_amostra = 0;
 	}
 
-	curr_state = VERMELHO;
-	fprintf(get_usart_stream(), "atual: %d, maximo: %d, minimo: %d\n\r", oxim_atual[IAC], maximo, minimo);
-	if((flag_vale = ON) && (oxim_atual[IAC] > erro) && (flag_pico == ON)){
-		fprintf(get_usart_stream(), " {erro: %d}\n\r", erro);
-		batimentos();
-		curr_state = ENVIO;
-		flag_pico = OFF;
+	anterior = oxim_atual[IAC];
+
+	if(flag_pronto){
+		flag_pronto = OFF;
+		flag_subindo = OFF;
+		flag_descendo = OFF;
 		flag_vale = OFF;
-		//flag_batimentos = OFF;
 		maximo = 0;
-		minimo = 0xFFFF;
-		erro = 0;
-	}
-/*
-	if(ciclo_oximetro == ON)
+		anterior = 0;
+		atual = 0;
+		//curr_state = ENVIO;
 		curr_state = VERMELHO;
-	else{
-
-	}
-*/
+	}else
+		curr_state = VERMELHO;
 }
 
 void f_temperatura(){
@@ -282,7 +290,7 @@ ISR(TIMER0_OVF_vect){ // 2ms
 	static uint8_t contTimer = 0;
 
 	if(contTimer > 1){
-		timer_20m = ON;
+		timer_amost = ON;
 		contTimer = 0;
 	}
 	contTimer++;
