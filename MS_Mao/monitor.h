@@ -20,11 +20,14 @@
 #define P_INFV PB1
 #define PA_VERM PB2
 #define PA_INFV PB3
+#define P_ganhoA PD6
+#define P_ganhoB PD7
 
 #define CTRL_LED GPIO_B
 #define TEMPO_SLEEP  1000//30000
+#define N_AMOSTRAS 10
 
-typedef enum ctrl{OFF, ON} flag_t;
+typedef enum ctrl{OFF, ON, FALSE, TRUE, DESCENDO, SUBINDO} flag_t;
 typedef enum {
 	RAC,
 	IAC,

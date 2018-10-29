@@ -1,4 +1,5 @@
 #include "monitor.h"
+#include "oximetro.h"
 #include "lib/avr_usart.h"
 
 /* Mapeamento entre estado e funções */
@@ -67,21 +68,21 @@ flag_t batimentos(flag_t status){
 		oximetro.batimento = 0;
 		batimento_ativo = ON;
 		set_bit(GPIO_B->PORT, PB4);
-		ret = OFF;
+		ret = FALSE;
 	}else if(status == OFF){
 		batimento_ativo = OFF;
 		ciclo_oximetro = OFF;
 		clr_bit(GPIO_B->PORT, PB4);
-		ret = ON;
+		ret = TRUE;
 		//fprintf(get_usart_stream(), " {tempo: %d}\n\r", oximetro.batimento);
 	}
 	return ret;
-
 }
 
 void controleInit(){
 
 	GPIO_B->DDR  |= SET(PB0) | SET(PB1) | SET(PB2) | SET(PB3) | SET(PB4);
+	GPIO_D->DDR  |= SET(PD6) | SET(PD7);
 	//GPIO_D->PORT |= SET(PD0) | SET(PD1) | SET(PD2) | SET(PD3);
 
 	adcInit();
@@ -166,53 +167,135 @@ void f_processamento(){
 	clr_bit(CTRL_LED->PORT, P_INFV);
 	clr_bit(CTRL_LED->PORT, P_VERM);
 
-	static uint16_t maximo = 0, erro, anterior = 0, atual = 0;
-	static flag_t flag_subindo = OFF, flag_descendo = OFF, flag_pronto = OFF, flag_vale = OFF;
+	static uint8_t atual = 0, anterior = 0, cont_subida = 0, cont_descida = 0, cont_amostras = 0, op_atual = 0;
+	static uint16_t amostra[N_AMOSTRAS] = {0}, amostra_R[N_AMOSTRAS] = {0}, erro = 0, valor_max = 0;
+	static flag_t flag_status = OFF, flag_status_anterior = OFF, flag_pronto = OFF;
 
 	oximetro.I_med = (oximetro.I_med + oxim_atual[IDC])/2;
 	oximetro.R_med = (oximetro.R_med + oxim_atual[RDC])/2;
-	atual = oxim_atual[IAC];
+	amostra[atual] = oxim_atual[IAC];
+	amostra_R[atual] = oxim_atual[RAC];
 
-	if(atual > anterior){
-		flag_subindo = ON;
-		flag_descendo = OFF;
-	}else if(atual < anterior){
-		flag_subindo = OFF;
-		flag_descendo = ON;
-	}else{
-		if(flag_subindo){
-			fprintf(get_usart_stream(), "atual: %d;\n\r", atual);
-			if(atual > maximo){
-				maximo = atual;
-				erro = (maximo - maximo/10);
-				flag_pronto = batimentos(ON);
-			}
-			if((atual > erro) && (flag_vale)){
-				flag_pronto = batimentos(OFF);
-			}
-		}else if(flag_descendo){
-			flag_vale = ON;
-			//cpl_bit(GPIO_B->PORT, PB4);
+	if(atual)
+		anterior = atual - 1;
+	else
+		anterior = N_AMOSTRAS - 1;
+
+	if(amostra[atual] > amostra[anterior]){
+		cont_subida++;
+		if(cont_subida == 5){
+			flag_status = SUBINDO;
+			cont_descida = 0;
+			cont_subida = 0;
 		}
-
-		flag_subindo = OFF;
-		flag_descendo = OFF;
-
-		atraso_amostra = 0;
+	}else if(amostra[atual] < amostra[anterior]){
+		cont_descida++;
+		if(cont_descida == 5){
+			flag_status = DESCENDO;
+			cont_descida = 0;
+			cont_subida = 0;
+		}
 	}
 
-	anterior = oxim_atual[IAC];
+	if(amostra[atual] > valor_max){
+		valor_max = amostra[atual] - amostra[atual]/50;
+		erro = valor_max - valor_max/10;
+	}
+	cont_amostras++;
 
-	if(flag_pronto){
-		flag_pronto = OFF;
-		flag_subindo = OFF;
-		flag_descendo = OFF;
-		flag_vale = OFF;
-		maximo = 0;
-		anterior = 0;
+	if( (cont_amostras == 150) && (valor_max < 512) ){
+		cont_amostras = 0;
+		valor_max = 0;
+		op_atual++;
+		if(op_atual == 4)
+			op_atual--;
+		fprintf(get_usart_stream(), "OP: %d; max: %d;\n\r", op_atual, valor_max);
+	}else if( (cont_amostras == 150) && (valor_max > 800) ){
+		cont_amostras = 0;
+		valor_max = 0;
+		op_atual--;
+		if(op_atual == 255)
+			op_atual = 0;
+		fprintf(get_usart_stream(), "OP: %d; max: %d;\n\r", op_atual, valor_max);
+	}else if( cont_amostras == 250){
+		fprintf(get_usart_stream(), "OP: %d; max: %d;[250]\n\r", op_atual, valor_max);
+		valor_max = 0;
+	}
+
+	switch(op_atual){
+		case 0:
+			clr_bit(CTRL_LED->PORT, P_ganhoA);
+			clr_bit(CTRL_LED->PORT, P_ganhoB);
+			break;
+		case 1:
+			set_bit(CTRL_LED->PORT, P_ganhoA);
+			clr_bit(CTRL_LED->PORT, P_ganhoB);
+			break;
+		case 2:
+			clr_bit(CTRL_LED->PORT, P_ganhoA);
+			set_bit(CTRL_LED->PORT, P_ganhoB);
+			break;
+		case 3:
+			set_bit(CTRL_LED->PORT, P_ganhoA);
+			set_bit(CTRL_LED->PORT, P_ganhoB);
+			break;
+		default:
+			op_atual = 0;
+			break;
+	}
+
+	if(flag_status_anterior != flag_status){
+		if(flag_status == DESCENDO){
+			uint8_t m = detectar_maior(amostra, N_AMOSTRAS);
+			if(amostra[m] > erro){
+				oximetro.I_max = amostra[m];
+				oximetro.R_max = amostra_R[m];
+
+				if(flag_pronto == DESCENDO)
+					flag_pronto = batimentos(ON);
+				else if(flag_pronto == ON)
+					flag_pronto = batimentos(OFF);
+			}
+		}else if(flag_status == SUBINDO){
+			uint8_t m = detectar_menor(amostra, N_AMOSTRAS);
+			oximetro.I_min = amostra[m];
+			oximetro.R_min = amostra_R[m];
+			if(flag_pronto == OFF)
+				flag_pronto = DESCENDO;
+			else if(flag_pronto == FALSE)
+				flag_pronto = ON;
+		}
+	}
+
+	flag_status_anterior = flag_status;
+
+	atual++;
+	if(atual == N_AMOSTRAS)
 		atual = 0;
-		//curr_state = ENVIO;
-		curr_state = VERMELHO;
+
+	if(flag_pronto == TRUE){
+
+		for(atual = 0; atual < N_AMOSTRAS; atual++){
+			amostra[atual] = 0;
+			amostra_R[atual] = 0;
+		}
+		valor_max = 0;
+
+		atual = 0;
+		erro = 0;
+		anterior = 0;
+		cont_subida = 0;
+		cont_descida = 0;
+		cont_amostras = 0;
+
+		// a vida eh bela
+
+		flag_status = OFF;
+		flag_status_anterior = OFF;
+		flag_pronto = OFF;
+
+		curr_state = ENVIO;
+		//curr_state = VERMELHO;
 	}else
 		curr_state = VERMELHO;
 }
@@ -249,11 +332,13 @@ void f_envio(){
 	timerOff();
 	clr_bit(ADCS->ADC_SRA, ADSC);
 
-	//sleep_enable();
+	sleep_enable();
 	curr_state = VERMELHO;
 	ciclo_oximetro = ON;
-	_delay_ms(500);
+
+	//ciclo_oximetro = OFF;
 	//curr_state = SLEEP;
+	//_delay_ms(500);
 
 }
 
