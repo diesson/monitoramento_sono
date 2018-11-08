@@ -7,7 +7,7 @@ Este projeto tem por objetivo o desenvolvimento de um sistema de monitoramento d
 * Entrega dos dados ao usuário via rede wireless. 
 
 ## Etapas de desenvolvimento do projeto
-Neste projeto, com a finalidade de se obter um melhor fluxo de desenvolvimento, dividiu-se em X etapas, sendo elas: 
+Neste projeto, com a finalidade de se obter um melhor fluxo de desenvolvimento, dividiu-se em 7 etapas, sendo elas: 
 1. Análise bibliográfica referente ao desenvolvimento de sistemas de monitoramento de sono, buscando obter informações sobre os principais sinais vitais que devem ser analisados para a avaliação do sono do usuário. 
 1. Seleção dos sensores e atuadores a serem utilizados no desenvolvimento do projeto. 
 1. Planejamento da rede de comunicação entre luva, base e computador do usuário. 
