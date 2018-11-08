@@ -5,17 +5,14 @@
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
 ../display/LCD.c \
-../display/LCD_I2C.c \
 ../display/displaySimpleMux.c 
 
 OBJS += \
 ./display/LCD.o \
-./display/LCD_I2C.o \
 ./display/displaySimpleMux.o 
 
 C_DEPS += \
 ./display/LCD.d \
-./display/LCD_I2C.d \
 ./display/displaySimpleMux.d 
 
 

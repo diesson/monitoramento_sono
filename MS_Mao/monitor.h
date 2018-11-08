@@ -14,6 +14,7 @@
 #include "lib/avr_adc.h"
 #include "lib/avr_timer.h"
 #include "oximetro.h"
+#include "accelerometer.h"
 
 // Define
 #define P_VERM PB0
@@ -26,6 +27,7 @@
 #define CTRL_LED GPIO_B
 #define TEMPO_SLEEP  1000//30000
 #define N_AMOSTRAS 10
+#define VALOR_COMPARACAO 100
 
 typedef enum ctrl{OFF, ON, FALSE, TRUE, DESCENDO, SUBINDO} flag_t;
 typedef enum {
@@ -64,6 +66,13 @@ typedef struct {
 	uint16_t R_med;
 	uint8_t batimento;
 }oximetro_t;
+
+typedef struct {
+	uint16_t pos_x;
+	uint16_t pos_y;
+	uint16_t pos_z;
+	uint8_t movimento;
+}acelerometro_t;
 
 // SM
 void f_vermelho();

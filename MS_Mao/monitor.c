@@ -19,6 +19,7 @@ volatile leitura_t leituraAtual;
 volatile flag_t timer_amost = OFF, batimento_ativo = OFF, ciclo_oximetro = ON;
 volatile uint32_t temperatura;
 volatile oximetro_t oximetro;
+volatile acelerometro_t acelerometro;
 volatile uint16_t oxim_atual[TAM_ADC];
 volatile uint16_t acordar = TEMPO_SLEEP;
 
@@ -99,6 +100,11 @@ void controleInit(){
 
 	oximetro.batimento = 0;
 
+	acelerometro.pos_x = 0;
+	acelerometro.pos_y = 0;
+	acelerometro.pos_z = 0;
+	acelerometro.movimento = 0;
+
 	set_sleep_mode(SLEEP_MODE_IDLE); //SLEEP_MODE_EXT_STANDBY
 
 }
@@ -112,6 +118,8 @@ void f_vermelho(){
 	clr_bit(CTRL_LED->PORT, P_INFV);
 
 	set_bit(CTRL_LED->PORT, PA_VERM);
+
+	_delay_ms(5);
 
 	// Leitura do Vermelho max
 	leituraAtual = RAC;
@@ -142,6 +150,8 @@ void f_infrav(){
 
 	set_bit(CTRL_LED->PORT, PA_INFV);
 
+	_delay_ms(5);
+
 	// Leitura do Infravermelho max
 	leituraAtual = IAC;
 	chg_nibl(ADCS->AD_MUX, IAC);	// SET(MUX0)
@@ -158,8 +168,8 @@ void f_infrav(){
 
 	while(!timer_amost);
 
-	curr_state = PROCESSAMENTO;
-
+	//curr_state = PROCESSAMENTO;
+	curr_state = ENVIO;
 }
 
 void f_processamento(){
@@ -209,16 +219,16 @@ void f_processamento(){
 		op_atual++;
 		if(op_atual == 4)
 			op_atual--;
-		fprintf(get_usart_stream(), "OP: %d; max: %d;\n\r", op_atual, valor_max);
+		fprintf(get_usart_stream(), "OP: %d; max: %d;\n\r", (op_atual + 1), valor_max);
 	}else if( (cont_amostras == 150) && (valor_max > 800) ){
 		cont_amostras = 0;
 		valor_max = 0;
 		op_atual--;
 		if(op_atual == 255)
 			op_atual = 0;
-		fprintf(get_usart_stream(), "OP: %d; max: %d;\n\r", op_atual, valor_max);
+		fprintf(get_usart_stream(), "OP: %d; max: %d;\n\r", (op_atual + 1), valor_max);
 	}else if( cont_amostras == 250){
-		fprintf(get_usart_stream(), "OP: %d; max: %d;[250]\n\r", op_atual, valor_max);
+		fprintf(get_usart_stream(), "OP: %d; max: %d;\n\r", (op_atual + 1), valor_max);
 		valor_max = 0;
 	}
 
@@ -317,7 +327,18 @@ void f_temperatura(){
 
 void f_envio(){
 
-	fprintf(get_usart_stream(), "batimento: %d;\n\r", 6000/oximetro.batimento);
+	static uint8_t mov = 0;
+
+	//fprintf(get_usart_stream(), "batimento: %d;\n\r", 6000/oximetro.batimento);
+	//fprintf(get_usart_stream(), "ENVIO: %d[%d]\n\r", mov, acelerometro.movimento);
+	if(mov < acelerometro.movimento)
+	{
+		fprintf(get_usart_stream(), "Acelerometro x: %d;\n\r", (signed)acelerometro.pos_x);
+		fprintf(get_usart_stream(), "Acelerometro y: %d;\n\r", (signed)acelerometro.pos_y);
+		fprintf(get_usart_stream(), "Acelerometro z: %d;\n\n\r", (signed)acelerometro.pos_z);
+		mov = acelerometro.movimento;
+	}
+	_delay_ms(1000);
 /*	fprintf(get_usart_stream(), "Medio [I/R]: [%d, %d];\n\r", oximetro.I_med, oximetro.R_med);
 	fprintf(get_usart_stream(), "Maximo [I/R]: [%d, %d];\n\r", oximetro.I_max, oximetro.R_max);
 	fprintf(get_usart_stream(), "Minimo [I/R]: [%d, %d];\n\r\n\r", oximetro.I_min, oximetro.R_min);
@@ -333,25 +354,33 @@ void f_envio(){
 	clr_bit(ADCS->ADC_SRA, ADSC);
 
 	sleep_enable();
-	curr_state = VERMELHO;
-	ciclo_oximetro = ON;
+	//curr_state = VERMELHO;
+	//curr_state = MOVIMENTO;
+	//ciclo_oximetro = ON;
 
-	//ciclo_oximetro = OFF;
-	//curr_state = SLEEP;
-	//_delay_ms(500);
+	ciclo_oximetro = OFF;
+	curr_state = SLEEP;
+	_delay_ms(500);
 
 }
 
 void f_sleep(){
+
+	static uint8_t mov = 0;
 
 	if(ciclo_oximetro == OFF){
 		if(acordar == 0){
 			ciclo_oximetro = ON;
 			sleep_disable();
 			acordar = TEMPO_SLEEP;
-			curr_state = VERMELHO;
+			//curr_state = VERMELHO;
+			curr_state = ENVIO;
+		}else if(mov < acelerometro.movimento){
+			curr_state = ENVIO;
+			mov = acelerometro.movimento;
 		}else{
 			sleep_cpu();
+			curr_state = MOVIMENTO;
 		}
 	}
 
@@ -359,7 +388,33 @@ void f_sleep(){
 
 void f_movimento(){
 
+	uint16_t pos_x, pos_y, pos_z, delta = 0, delta_temp = 0;
 
+	pos_x = read_x_accelerometer();
+	pos_y = read_y_accelerometer();
+	pos_z = read_z_accelerometer();
+
+	delta_temp = acelerometro.pos_x - pos_x;
+	if((signed)delta_temp < 0)
+		delta = delta_temp*-1;
+
+	delta_temp = acelerometro.pos_y - pos_y;
+	if((signed)delta_temp < 0)
+		delta += delta_temp*-1;
+
+	delta_temp = acelerometro.pos_z - pos_z;
+	if((signed)delta_temp < 0)
+		delta += delta_temp*-1;
+
+	if(delta > VALOR_COMPARACAO)
+		acelerometro.movimento++;
+
+	acelerometro.pos_x = pos_x;
+	acelerometro.pos_y = pos_y;
+	acelerometro.pos_z = pos_z;
+
+	//fprintf(get_usart_stream(), "delta: %d\n\r", delta);
+	curr_state = SLEEP;
 
 }
 

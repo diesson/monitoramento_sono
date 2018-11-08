@@ -4,16 +4,19 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
+../accelerometer.c \
 ../main.c \
 ../monitor.c \
 ../oximetro.c 
 
 OBJS += \
+./accelerometer.o \
 ./main.o \
 ./monitor.o \
 ./oximetro.o 
 
 C_DEPS += \
+./accelerometer.d \
 ./main.d \
 ./monitor.d \
 ./oximetro.d 

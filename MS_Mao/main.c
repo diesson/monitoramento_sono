@@ -22,8 +22,12 @@ int main(){
 	controleInit();
 	sei();
 
-	_delay_ms(100);
 	fprintf(usart, "USART\n\r");
+	i2c_init();
+	adxl345_init();
+	fprintf(usart, "I2C\n\r");
+
+	_delay_ms(100);
 
 	while(1){
 
