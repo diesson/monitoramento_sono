@@ -16,80 +16,79 @@ fsm_t myFSM[] = {
 // Variaveis globais
 volatile state_t curr_state;
 volatile leitura_t leituraAtual;
-volatile flag_t timer_amost = OFF, batimento_ativo = OFF, ciclo_oximetro = ON;
-volatile uint32_t temperatura;
 volatile oximetro_t oximetro;
-volatile acelerometro_t acelerometro;
 volatile uint16_t oxim_atual[TAM_ADC];
-volatile uint16_t acordar = TEMPO_SLEEP;
+volatile uint32_t temperatura;
+volatile acelerometro_t acelerometro;
+volatile flag_t batimento_ativo = OFF, ciclo_oximetro = ON;
+extern volatile timer_t controle_timer;
 
-// Funcoes locais
-static flag_t batimentos(flag_t status);
-static inline void timerOn(void){TIMER_IRQS->TC0.BITS.TOIE = 1; timer_amost = OFF;}//cpl_bit(GPIO_B->PORT, PB4);
-static inline void timerOff(void){ TIMER_IRQS->TC0.BITS.OCIEA = 0;}
+flag_t batimentos(flag_t status){
+
+	if((batimento_ativo == OFF) && (status == ON)){
+		oximetro.batimento = 0;
+		batimento_ativo = ON;
+		status = FALSE;
+			set_bit(GPIO_B->PORT, PB4);
+	}else if(status == OFF){
+		ciclo_oximetro = OFF;
+		batimento_ativo = OFF;
+		status = TRUE;
+			clr_bit(GPIO_B->PORT, PB4);
+	}
+	return status;
+}
 
 /* Inicializacoes */
 void adcInit(){
 
-	// Entrada[1, 2] [ADC]
 	GPIO_C->DDR |= UNSET(PC0) | UNSET(PC1) | UNSET(PC2) | UNSET(PC3) | UNSET(PC4);	// GPIO_C->DDR |= ~(0b00000111);
 
-	// Configuracao
+	// Configuracao dos ADC
 	ADCS->AD_MUX = UNSET(REFS1) | SET(REFS0) | UNSET(ADLAR) | UNSET(MUX3) | UNSET(MUX2) | UNSET(MUX1) | UNSET(MUX0); // AVCC
 	ADCS->ADC_SRA = SET(ADEN) | SET(ADSC) | UNSET(ADATE) | SET(ADIE) | SET(ADPS2) | SET(ADPS1) | SET(ADPS0);
 
-	// Desabilitar parte digital
+	// Desabilitar a parte digital
 	ADCS->DIDr0.BITS.ADC0 = 1;
 	ADCS->DIDr0.BITS.ADC1 = 1;
 	ADCS->DIDr0.BITS.ADC2 = 1;
 	ADCS->DIDr0.BITS.ADC3 = 1;
 	ADCS->DIDr0.BITS.ADC4 = 1;
 
-	chg_nibl(ADCS->AD_MUX, 0x01);	// SET(MUX0)
+	// Inicializa no ADC 01
+	chg_nibl(ADCS->AD_MUX, 0x01);
 
 }
 
 void timerInit(){
 
+	// Configuracao do Timer 0 [~1.02ms, presc = 64]
 	TIMER_0->TCCRA = UNSET(COM0A1) | UNSET(COM0A0) | UNSET(COM0B1) | UNSET(COM0B0) | UNSET(WGM01) | UNSET(WGM00);
-	TIMER_0->TCCRB = SET(WGM02) | UNSET(CS02) | SET(CS01) | SET(CS00); // ~1.02ms presc = 64
-	//TIMER_IRQS->TC0.BITS.TOIE = 1;
+	TIMER_0->TCCRB = SET(WGM02) | UNSET(CS02) | SET(CS01) | SET(CS00);
 
+	// Configuracao do Timer 1 [~10ms, presc = 64]
 	TIMER_1->TCCRA = UNSET(COM1A1) | UNSET(COM1A0) | UNSET(COM1B1) | UNSET(COM1B0) | UNSET(WGM11) | UNSET(WGM10);
-	TIMER_1->TCCRB = UNSET(WGM13) | SET(WGM12) | UNSET(CS12) | SET(CS11) | SET(CS10); // ~10ms presc = 64
+	TIMER_1->TCCRB = UNSET(WGM13) | SET(WGM12) | UNSET(CS12) | SET(CS11) | SET(CS10);
 	TIMER_IRQS->TC1.BITS.OCIEA = 1;
 	TIMER_1->OCRA = 2500;
 
-}
+	controle_timer.timer0_status = OFF;
+	controle_timer.timer0_tempo = 0;
+	controle_timer.timer1_tempo = TEMPO_SLEEP;
 
-flag_t batimentos(flag_t status){
-
-	flag_t ret;
-	if((batimento_ativo == OFF) && (status == ON)){
-		oximetro.batimento = 0;
-		batimento_ativo = ON;
-		set_bit(GPIO_B->PORT, PB4);
-		ret = FALSE;
-	}else if(status == OFF){
-		batimento_ativo = OFF;
-		ciclo_oximetro = OFF;
-		clr_bit(GPIO_B->PORT, PB4);
-		ret = TRUE;
-		//fprintf(get_usart_stream(), " {tempo: %d}\n\r", oximetro.batimento);
-	}
-	return ret;
 }
 
 void controleInit(){
 
+	// Inicializacao das pinos
 	GPIO_B->DDR  |= SET(PB0) | SET(PB1) | SET(PB2) | SET(PB3) | SET(PB4);
 	GPIO_D->DDR  |= SET(PD6) | SET(PD7);
-	//GPIO_D->PORT |= SET(PD0) | SET(PD1) | SET(PD2) | SET(PD3);
 
+	// Inicializacao do ADC e Timer
 	adcInit();
 	timerInit();
-	curr_state = VERMELHO;
 
+	// Inicializacao da estrutura de dados do oximetro
 	oximetro.I_max = 0;
 	oximetro.I_min = 1024;
 	oximetro.I_med = 0;
@@ -100,42 +99,46 @@ void controleInit(){
 
 	oximetro.batimento = 0;
 
+	// Inicializacao da estrutura de dados do acelerometro
 	acelerometro.pos_x = 0;
 	acelerometro.pos_y = 0;
 	acelerometro.pos_z = 0;
 	acelerometro.movimento = 0;
 
-	set_sleep_mode(SLEEP_MODE_IDLE); //SLEEP_MODE_EXT_STANDBY
+	// Inicializacao da maquina de estados
+	curr_state = VERMELHO;
+
+	// Configuracao do modo sleep
+	set_sleep_mode(SLEEP_MODE_IDLE);			// opcional: SLEEP_MODE_EXT_STANDBY
 
 }
 
 /* funcoes da maquina de estado */
 void f_vermelho(){
 
-	timerOn();
+	// Acionar o LED Vermelho
+	controleLed(P_VERM, ON);
 
-	set_bit(CTRL_LED->PORT, P_VERM);
-	clr_bit(CTRL_LED->PORT, P_INFV);
+	// Acionamento do S/H
+	timerOn(3);
+	timerWait();
+	controleSH(PA_VERM, ON);
+	timerOn(1);
+	timerWait();
+	controleSH(PA_VERM, OFF);
+	timerOn(1);
+	timerWait();
 
-	set_bit(CTRL_LED->PORT, PA_VERM);
-
-	_delay_ms(5);
+	// Apagar o LED Vermelho
+	controleLed(P_VERM, OFF);
 
 	// Leitura do Vermelho max
 	leituraAtual = RAC;
-	chg_nibl(ADCS->AD_MUX, RAC);	// SET(MUX0)
-	set_bit(ADCS->ADC_SRA, ADSC);
-	while(tst_bit(ADCS->ADC_SRA, ADSC));
-
-	clr_bit(CTRL_LED->PORT, PA_VERM);
+	adcOn(RAC);
 
 	// Leitura do Vermelho med
 	leituraAtual = RDC;
-	chg_nibl(ADCS->AD_MUX, RDC);	// SET(MUX1)
-	set_bit(ADCS->ADC_SRA, ADSC);
-	while(tst_bit(ADCS->ADC_SRA, ADSC));
-
-	while(!timer_amost);
+	adcOn(RDC);
 
 	curr_state = INFRAV;
 
@@ -143,122 +146,89 @@ void f_vermelho(){
 
 void f_infrav(){
 
-	timerOn();
+	// Acionar o LED Infravermelho
+	controleLed(P_INFV, ON);
 
-	set_bit(CTRL_LED->PORT, P_INFV);
-	clr_bit(CTRL_LED->PORT, P_VERM);
+	// Acionamento do S/H
+	timerOn(3);
+	timerWait();
+	controleSH(PA_INFV, ON);
+	timerOn(1);
+	timerWait();
+	controleSH(PA_INFV, OFF);
+	timerOn(1);
+	timerWait();
 
-	set_bit(CTRL_LED->PORT, PA_INFV);
-
-	_delay_ms(5);
+	// Apagar o LED Infravermelho
+	controleLed(PA_INFV, OFF);
 
 	// Leitura do Infravermelho max
 	leituraAtual = IAC;
-	chg_nibl(ADCS->AD_MUX, IAC);	// SET(MUX0)
-	set_bit(ADCS->ADC_SRA, ADSC);
-	while(tst_bit(ADCS->ADC_SRA, ADSC));
-
-	clr_bit(CTRL_LED->PORT, PA_INFV);
+	adcOn(IAC);
 
 	// Leitura do Infravermelho med
 	leituraAtual = IDC;
-	chg_nibl(ADCS->AD_MUX, IDC);	// SET(MUX1)
-	set_bit(ADCS->ADC_SRA, ADSC);
-	while(tst_bit(ADCS->ADC_SRA, ADSC));
+	adcOn(IDC);
 
-	while(!timer_amost);
+	curr_state = PROCESSAMENTO;
 
-	//curr_state = PROCESSAMENTO;
-	curr_state = ENVIO;
 }
 
 void f_processamento(){
 
-	clr_bit(CTRL_LED->PORT, P_INFV);
-	clr_bit(CTRL_LED->PORT, P_VERM);
+	// Garantir que os LED's estao apagados
+	controleLed(P_VERM, OFF);
+	controleLed(P_INFV, OFF);
 
-	static uint8_t atual = 0, anterior = 0, cont_subida = 0, cont_descida = 0, cont_amostras = 0, op_atual = 0;
-	static uint16_t amostra[N_AMOSTRAS] = {0}, amostra_R[N_AMOSTRAS] = {0}, erro = 0, valor_max = 0;
-	static flag_t flag_status = OFF, flag_status_anterior = OFF, flag_pronto = OFF;
+	// Variaveis
+	static uint8_t 	atual = 0,
+					anterior = 0;
+	static uint16_t amostra_IR[N_AMOSTRAS] = {0},
+					amostra_R[N_AMOSTRAS] = {0},
+					maximo_R = 0,
+					maximo_IR = 0,
+					erro = 0;
+	static flag_t 	flag_status = OFF,
+					flag_status_anterior = OFF,
+					flag_pronto = OFF;
 
+	// Aquisicao dos valores medios
 	oximetro.I_med = (oximetro.I_med + oxim_atual[IDC])/2;
 	oximetro.R_med = (oximetro.R_med + oxim_atual[RDC])/2;
-	amostra[atual] = oxim_atual[IAC];
+
+	// Armazenar os valores AC em um vetor
+	amostra_IR[atual] = oxim_atual[IAC];
 	amostra_R[atual] = oxim_atual[RAC];
 
+	// Posicao anterior do vetor
 	if(atual)
 		anterior = atual - 1;
 	else
 		anterior = N_AMOSTRAS - 1;
 
-	if(amostra[atual] > amostra[anterior]){
-		cont_subida++;
-		if(cont_subida == 5){
-			flag_status = SUBINDO;
-			cont_descida = 0;
-			cont_subida = 0;
-		}
-	}else if(amostra[atual] < amostra[anterior]){
-		cont_descida++;
-		if(cont_descida == 5){
-			flag_status = DESCENDO;
-			cont_descida = 0;
-			cont_subida = 0;
-		}
+	// Verificacao da inclinacao
+	flag_status = oximetroInclinacao(amostra_IR[atual], amostra_IR[anterior], flag_status);
+
+	// Armazenar o maior valor
+	if(amostra_IR[atual] > maximo_IR){
+		maximo_IR = amostra_IR[atual] - amostra_IR[atual]/50;
+		erro = maximo_IR - maximo_IR/10;
 	}
 
-	if(amostra[atual] > valor_max){
-		valor_max = amostra[atual] - amostra[atual]/50;
-		erro = valor_max - valor_max/10;
-	}
-	cont_amostras++;
-
-	if( (cont_amostras == 150) && (valor_max < 512) ){
-		cont_amostras = 0;
-		valor_max = 0;
-		op_atual++;
-		if(op_atual == 4)
-			op_atual--;
-		fprintf(get_usart_stream(), "OP: %d; max: %d;\n\r", (op_atual + 1), valor_max);
-	}else if( (cont_amostras == 150) && (valor_max > 800) ){
-		cont_amostras = 0;
-		valor_max = 0;
-		op_atual--;
-		if(op_atual == 255)
-			op_atual = 0;
-		fprintf(get_usart_stream(), "OP: %d; max: %d;\n\r", (op_atual + 1), valor_max);
-	}else if( cont_amostras == 250){
-		fprintf(get_usart_stream(), "OP: %d; max: %d;\n\r", (op_atual + 1), valor_max);
-		valor_max = 0;
+	if(amostra_R[atual] > maximo_R){
+		maximo_R = amostra_R[atual] - amostra_R[atual]/50;
 	}
 
-	switch(op_atual){
-		case 0:
-			clr_bit(CTRL_LED->PORT, P_ganhoA);
-			clr_bit(CTRL_LED->PORT, P_ganhoB);
-			break;
-		case 1:
-			set_bit(CTRL_LED->PORT, P_ganhoA);
-			clr_bit(CTRL_LED->PORT, P_ganhoB);
-			break;
-		case 2:
-			clr_bit(CTRL_LED->PORT, P_ganhoA);
-			set_bit(CTRL_LED->PORT, P_ganhoB);
-			break;
-		case 3:
-			set_bit(CTRL_LED->PORT, P_ganhoA);
-			set_bit(CTRL_LED->PORT, P_ganhoB);
-			break;
-		default:
-			op_atual = 0;
-			break;
-	}
+	// Verificar se precisa aumentar o ganho dos PGAs
+	maximo_IR = getControlePga(maximo_IR, PGA_IRED);
+	maximo_R = getControlePga(maximo_R, PGA_RED);
 
+	// Deteccao de pico ou vale
 	if(flag_status_anterior != flag_status){
 		if(flag_status == DESCENDO){
-			uint8_t m = detectar_maior(amostra, N_AMOSTRAS);
-			if(amostra[m] > erro){
-				oximetro.I_max = amostra[m];
+			uint8_t m = detectar_maior(amostra_IR, N_AMOSTRAS);
+			if(amostra_IR[m] > erro){
+				oximetro.I_max = amostra_IR[m];
 				oximetro.R_max = amostra_R[m];
 
 				if(flag_pronto == DESCENDO)
@@ -267,9 +237,10 @@ void f_processamento(){
 					flag_pronto = batimentos(OFF);
 			}
 		}else if(flag_status == SUBINDO){
-			uint8_t m = detectar_menor(amostra, N_AMOSTRAS);
-			oximetro.I_min = amostra[m];
+			uint8_t m = detectar_menor(amostra_IR, N_AMOSTRAS);
+			oximetro.I_min = amostra_IR[m];
 			oximetro.R_min = amostra_R[m];
+
 			if(flag_pronto == OFF)
 				flag_pronto = DESCENDO;
 			else if(flag_pronto == FALSE)
@@ -279,110 +250,48 @@ void f_processamento(){
 
 	flag_status_anterior = flag_status;
 
+	// Atualizacao da posicao do indice do vetor
 	atual++;
 	if(atual == N_AMOSTRAS)
 		atual = 0;
 
+	// Reset das variaveis ou retorno para a proxima amostragem
 	if(flag_pronto == TRUE){
 
 		for(atual = 0; atual < N_AMOSTRAS; atual++){
-			amostra[atual] = 0;
+			amostra_IR[atual] = 0;
 			amostra_R[atual] = 0;
 		}
-		valor_max = 0;
+
+		getControlePga(maximo_IR, PGA_RESET);
+
+		maximo_IR = 0;
+		maximo_R = 0;
+		erro = 0;
 
 		atual = 0;
-		erro = 0;
 		anterior = 0;
-		cont_subida = 0;
-		cont_descida = 0;
-		cont_amostras = 0;
-
-		// a vida eh bela
 
 		flag_status = OFF;
 		flag_status_anterior = OFF;
 		flag_pronto = OFF;
 
-		curr_state = ENVIO;
-		//curr_state = VERMELHO;
+		curr_state = TEMPERATURA;
 	}else
 		curr_state = VERMELHO;
 }
 
 void f_temperatura(){
 
-	// Leitura do Infravermelho med
+	// Leitura da temperatura
 	leituraAtual = TEMP;
-	chg_nibl(ADCS->AD_MUX, 2);	// SET(MUX1)
-	set_bit(ADCS->ADC_SRA, ADSC);
-	while(tst_bit(ADCS->ADC_SRA, ADSC));
+	adcOn(TEMP);
 
+	// Calculo da temperatura
 	temperatura = oxim_atual[TEMP]*5;
 	temperatura = temperatura*100/1024;
 
 	curr_state = ENVIO;
-
-}
-
-void f_envio(){
-
-	static uint8_t mov = 0;
-
-	//fprintf(get_usart_stream(), "batimento: %d;\n\r", 6000/oximetro.batimento);
-	//fprintf(get_usart_stream(), "ENVIO: %d[%d]\n\r", mov, acelerometro.movimento);
-	if(mov < acelerometro.movimento)
-	{
-		fprintf(get_usart_stream(), "Acelerometro x: %d;\n\r", (signed)acelerometro.pos_x);
-		fprintf(get_usart_stream(), "Acelerometro y: %d;\n\r", (signed)acelerometro.pos_y);
-		fprintf(get_usart_stream(), "Acelerometro z: %d;\n\n\r", (signed)acelerometro.pos_z);
-		mov = acelerometro.movimento;
-	}
-	_delay_ms(1000);
-/*	fprintf(get_usart_stream(), "Medio [I/R]: [%d, %d];\n\r", oximetro.I_med, oximetro.R_med);
-	fprintf(get_usart_stream(), "Maximo [I/R]: [%d, %d];\n\r", oximetro.I_max, oximetro.R_max);
-	fprintf(get_usart_stream(), "Minimo [I/R]: [%d, %d];\n\r\n\r", oximetro.I_min, oximetro.R_min);
-
-	uint32_t conta = ((uint32_t)(oximetro.R_max - oximetro.R_min)*oximetro.I_med*100)/((uint32_t)(oximetro.I_max - oximetro.I_min)*oximetro.R_med*5);
-
-	fprintf(get_usart_stream(), "Temperatura: %ld;\n\r", temperatura);
-	//fprintf(get_usart_stream(), "conta = [(%u - %u)*%u*100]/[(%u - %u)*%u*5];\n\r\n\r", oximetro.R_max,oximetro.R_min, oximetro.I_med, oximetro.I_max, oximetro.I_min, oximetro.R_med);
-	//fprintf(get_usart_stream(), "conta = %ld/%ld;\n\r\n\r", (uint32_t)(oximetro.R_max - oximetro.R_min)*oximetro.I_med*100, (uint32_t)(oximetro.I_max - oximetro.I_min)*oximetro.R_med*5);
-	fprintf(get_usart_stream(), "Oximetro : %ld;\n\r\n\r", conta);
-*/
-	timerOff();
-	clr_bit(ADCS->ADC_SRA, ADSC);
-
-	sleep_enable();
-	//curr_state = VERMELHO;
-	//curr_state = MOVIMENTO;
-	//ciclo_oximetro = ON;
-
-	ciclo_oximetro = OFF;
-	curr_state = SLEEP;
-	_delay_ms(500);
-
-}
-
-void f_sleep(){
-
-	static uint8_t mov = 0;
-
-	if(ciclo_oximetro == OFF){
-		if(acordar == 0){
-			ciclo_oximetro = ON;
-			sleep_disable();
-			acordar = TEMPO_SLEEP;
-			//curr_state = VERMELHO;
-			curr_state = ENVIO;
-		}else if(mov < acelerometro.movimento){
-			curr_state = ENVIO;
-			mov = acelerometro.movimento;
-		}else{
-			sleep_cpu();
-			curr_state = MOVIMENTO;
-		}
-	}
 
 }
 
@@ -418,6 +327,77 @@ void f_movimento(){
 
 }
 
+void f_envio(){
+
+	static uint8_t mov = 0;
+	uint8_t ganho_R, ganho_IR;
+
+	// Calculo da oxigenacao
+	ganho_R = getGanhoPga(PGA_RED);
+	ganho_IR = getGanhoPga(PGA_IRED);
+	uint32_t conta = 	((uint32_t)(oximetro.R_max - oximetro.R_min)*oximetro.I_med*ganho_IR*100)/
+						((uint32_t)(oximetro.I_max - oximetro.I_min)*oximetro.R_med*ganho_R);
+
+	// Envio da informacao via USART para depuracao
+	fprintf(get_usart_stream(), "batimento: %d;\n\r", 6000/oximetro.batimento);
+	fprintf(get_usart_stream(), "[Ganho R: %d; Ganho IR: %d]\n\r", ganho_R, ganho_IR);
+	fprintf(get_usart_stream(), "Oximetro : %ld;\n\r\n\r", conta);
+
+	if(mov < acelerometro.movimento){
+		fprintf(get_usart_stream(), "Acelerometro: [%d, %d, %d]; %d movs\n\r", 	(signed)acelerometro.pos_x,
+																				(signed)acelerometro.pos_y,
+																				(signed)acelerometro.pos_z,
+																				acelerometro.movimento);
+		mov = acelerometro.movimento;
+	}
+
+	fprintf(get_usart_stream(), "Temperatura: %ld;\n\r", temperatura);
+
+/*	_delay_ms(1000);
+	fprintf(get_usart_stream(), "Medio [I/R]: [%d, %d];\n\r", oximetro.I_med, oximetro.R_med);
+	fprintf(get_usart_stream(), "Maximo [I/R]: [%d, %d];\n\r", oximetro.I_max, oximetro.R_max);
+	fprintf(get_usart_stream(), "Minimo [I/R]: [%d, %d];\n\r\n\r", oximetro.I_min, oximetro.R_min);
+
+	uint32_t conta = ((uint32_t)(oximetro.R_max - oximetro.R_min)*oximetro.I_med*100)/((uint32_t)(oximetro.I_max - oximetro.I_min)*oximetro.R_med*5);
+
+	fprintf(get_usart_stream(), "Temperatura: %ld;\n\r", temperatura);
+	fprintf(get_usart_stream(), "conta = [(%u - %u)*%u*100]/[(%u - %u)*%u*5];\n\r\n\r", oximetro.R_max,oximetro.R_min, oximetro.I_med, oximetro.I_max, oximetro.I_min, oximetro.R_med);
+	fprintf(get_usart_stream(), "conta = %ld/%ld;\n\r\n\r", (uint32_t)(oximetro.R_max - oximetro.R_min)*oximetro.I_med*100, (uint32_t)(oximetro.I_max - oximetro.I_min)*oximetro.R_med*5);
+	fprintf(get_usart_stream(), "Oximetro : %ld;\n\r\n\r", conta);*/
+
+	// Preparo para entrar no modo Sleep
+	timerOff();
+	adcOff();
+	sleep_enable();
+
+	ciclo_oximetro = OFF;
+	curr_state = SLEEP;
+
+	_delay_ms(1000);
+
+}
+
+void f_sleep(){
+
+	static uint8_t mov = 0;
+
+	if(ciclo_oximetro == OFF){
+		if(controle_timer.timer1_tempo == 0){
+			ciclo_oximetro = ON;
+			sleep_disable();
+			controle_timer.timer1_tempo = TEMPO_SLEEP;
+			curr_state = VERMELHO;
+		}else if(mov < acelerometro.movimento){
+			//curr_state = ENVIO;
+			mov = acelerometro.movimento;
+		}else{
+			sleep_cpu();
+			curr_state = MOVIMENTO;
+		}
+	}
+
+}
+
 /* Interrupcoes */
 ISR(ADC_vect){
 
@@ -425,15 +405,12 @@ ISR(ADC_vect){
 
 }
 
-ISR(TIMER0_OVF_vect){ // 2ms
+ISR(TIMER0_OVF_vect){ // 1ms
 
-	static uint8_t contTimer = 0;
-
-	if(contTimer > 1){
-		timer_amost = ON;
-		contTimer = 0;
-	}
-	contTimer++;
+	if((controle_timer.timer0_tempo) && (controle_timer.timer0_status = OFF)){
+		controle_timer.timer0_tempo--;
+	}else
+		controle_timer.timer0_status = ON;
 
 }
 
@@ -443,6 +420,6 @@ ISR(TIMER1_COMPA_vect){ // 10ms
 		oximetro.batimento++;
 
 	if(ciclo_oximetro == OFF)
-		acordar--;
+		controle_timer.timer1_tempo--;
 
 }
