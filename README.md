@@ -85,7 +85,7 @@ Segundo Lima (2006 apud ELSHARYDAH, 2009), cada substância possui diferentes ca
 
 ![Polissonografia_4](./images/figura4.png "Espectro de absorção de luz das hemoglobinas HbO2 e Hb")
 
-Figura 2. Espectro de absorção de luz das hemoglobinas HbO2 e Hb.
+Figura 2. Espectro de absorção de luz das hemoglobinas HbO<sub>2</sub> e Hb.
 
 Para este projeto, foi utilizado o oxímetro de pulso transmissivo, ainda havendo o oxímetro de pulso reflexivo, que não foi utilizado devido a sua complexidade de projeto. O circuito básico de um oxímetro de pulso consiste na utilização de dois LEDs (um vermelho e outro infravermelho) para a emissão da luz e um fotodetector para a leitura da luz transmitida, estando o fotodetector posicionado de maneira oposta aos LEDs, como pode ser observado na Figura 5. Para este projeto, foi utilizado o fototransistor TIL78 como fotodetector e o LED infravermelho TIL32 e um LED vermelho de alto brilho como fototransmissores.
 
