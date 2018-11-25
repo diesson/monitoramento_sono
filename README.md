@@ -79,13 +79,13 @@ A fotopletismografia, de acordo com Oshiro (2011), é uma técnica que utiliza u
 
 ![Polissonografia_3](./images/figura3.png "Sinal gerado por um oxímetro de pulso")
 
-Figura 2. Sinal gerado por um oxímetro de pulso.
+Figura 3. Sinal gerado por um oxímetro de pulso.
 
 Segundo Lima (2006 apud ELSHARYDAH, 2009), cada substância possui diferentes capacidades de absorção de luz, que é em função do comprimento de onda da luz que incide sobre ela. Para o caso das hemoglobinas, oxigenada (HbO<sub>2</sub>) e não oxigenada (Hb), temos como os principais comprimento de onda absorvidos a luz infravermelho (940 nm) e vermelha (660 nm), como pode ser observado na Figura 4.
 
 ![Polissonografia_4](./images/figura4.png "Espectro de absorção de luz das hemoglobinas HbO2 e Hb")
 
-Figura 2. Espectro de absorção de luz das hemoglobinas HbO<sub>2</sub> e Hb.
+Figura 4. Espectro de absorção de luz das hemoglobinas HbO<sub>2</sub> e Hb.
 
 Para este projeto, foi utilizado o oxímetro de pulso transmissivo, ainda havendo o oxímetro de pulso reflexivo, que não foi utilizado devido a sua complexidade de projeto. O circuito básico de um oxímetro de pulso consiste na utilização de dois LEDs (um vermelho e outro infravermelho) para a emissão da luz e um fotodetector para a leitura da luz transmitida, estando o fotodetector posicionado de maneira oposta aos LEDs, como pode ser observado na Figura 5. Para este projeto, foi utilizado o fototransistor TIL78 como fotodetector e o LED infravermelho TIL32 e um LED vermelho de alto brilho como fototransmissores.
 
@@ -103,7 +103,7 @@ Com a amostragem pelo microcontrolador, pode-se realizar os cálculos da oxigena
 APRESENTAR A ESTRUTURA DE BLOCOS DO OXÍMETRO
 ![Polissonografia_6](./images/figura4.png "Espectro de absorção de luz das hemoglobinas HbO2 e Hb")
 
-Figura 5. APRESENTAR A ESTRUTURA DE BLOCOS DO OXÍMETRO.
+Figura 6. APRESENTAR A ESTRUTURA DE BLOCOS DO OXÍMETRO.
 
 
 ## Autores
