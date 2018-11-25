@@ -1,5 +1,6 @@
 #include "estacao.h"
 #include "lib/avr_usart.h"
+#include "dht22.h"
 
 /* Mapeamento entre estado e funções */
 fsm_t myFSM[] = {
@@ -14,6 +15,7 @@ fsm_t myFSM[] = {
 volatile state_t curr_state;
 volatile flag_t timer_amost = OFF, batimento_ativo = OFF, ciclo_oximetro = ON;
 volatile uint16_t acordar = TEMPO_SLEEP;
+extern volatile dht22_t dht22;
 
 /* Inicializacoes */
 void adcInit(){
@@ -51,8 +53,8 @@ void timerInit(){
 
 void controleInit(){
 
-	GPIO_B->DDR  |= SET(PB0) | SET(PB1) | SET(PB2) | SET(PB3) | SET(PB4);
-	GPIO_D->DDR  |= SET(PD6) | SET(PD7);
+	//GPIO_B->DDR  |= SET(PB0) | SET(PB1) | SET(PB2) | SET(PB3) | SET(PB4);
+	//GPIO_D->DDR  |= SET(PD6) | SET(PD7);
 	//GPIO_D->PORT |= SET(PD0) | SET(PD1) | SET(PD2) | SET(PD3);
 
 	adcInit();
@@ -67,7 +69,15 @@ void controleInit(){
 /* funcoes da maquina de estado */
 void f_temperatura(){
 
-	curr_state = LUZ;
+	static uint16_t temp, umid;
+
+	if(dht_read_data(&dht22, &temp, &umid))
+	{
+		fprintf(get_usart_stream(), "---------------------------------\ntemperatura: %d.%d C\n\r", temp/10, temp%10);
+		fprintf(get_usart_stream(), "umidade: %d.%d%%\n---------------------------------\n\r", umid/10, umid%10);
+	}
+
+	//curr_state = LUZ;
 
 }
 

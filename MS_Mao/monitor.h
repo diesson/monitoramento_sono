@@ -27,7 +27,7 @@
 #define P_ganhoA3 PD7
 
 #define CTRL_LED GPIO_B
-#define TEMPO_SLEEP  1000//30000
+#define TEMPO_SLEEP  1//1000//30000
 #define N_AMOSTRAS 10
 #define VALOR_COMPARACAO 100
 

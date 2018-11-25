@@ -15,7 +15,6 @@
 #include "lib/avr_timer.h"
 
 // Define
-#define CTRL_LED GPIO_B
 #define TEMPO_SLEEP  1000//30000
 #define N_AMOSTRAS 10
 #define VALOR_COMPARACAO 100

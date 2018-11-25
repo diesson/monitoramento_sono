@@ -110,7 +110,7 @@ void controleInit(){
 
 	// Configuracao do modo sleep
 	set_sleep_mode(SLEEP_MODE_IDLE);			// opcional: SLEEP_MODE_EXT_STANDBY
-
+	fprintf(get_usart_stream(), ".");
 }
 
 /* funcoes da maquina de estado */
@@ -276,7 +276,8 @@ void f_processamento(){
 		flag_status_anterior = OFF;
 		flag_pronto = OFF;
 
-		curr_state = TEMPERATURA;
+		//curr_state = TEMPERATURA;
+		curr_state = ENVIO;
 	}else
 		curr_state = VERMELHO;
 }
@@ -323,7 +324,8 @@ void f_movimento(){
 	acelerometro.pos_z = pos_z;
 
 	//fprintf(get_usart_stream(), "delta: %d\n\r", delta);
-	curr_state = SLEEP;
+	//curr_state = SLEEP;
+	curr_state = VERMELHO;
 
 }
 
@@ -366,14 +368,15 @@ void f_envio(){
 	fprintf(get_usart_stream(), "Oximetro : %ld;\n\r\n\r", conta);*/
 
 	// Preparo para entrar no modo Sleep
-	timerOff();
-	adcOff();
-	sleep_enable();
+	//timerOff();
+	//adcOff();
+	//sleep_enable();
 
-	ciclo_oximetro = OFF;
-	curr_state = SLEEP;
+	//ciclo_oximetro = OFF;
+	//curr_state = SLEEP;
+	curr_state = MOVIMENTO;
 
-	_delay_ms(1000);
+	//_delay_ms(1000);
 
 }
 
