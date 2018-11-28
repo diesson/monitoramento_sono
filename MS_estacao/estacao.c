@@ -1,6 +1,7 @@
 #include "estacao.h"
 #include "lib/avr_usart.h"
 #include "dht22.h"
+#include "temt6000.h"
 
 /* Mapeamento entre estado e funções */
 fsm_t myFSM[] = {
@@ -13,31 +14,12 @@ fsm_t myFSM[] = {
 
 // Variaveis globais
 volatile state_t curr_state;
-volatile flag_t timer_amost = OFF, batimento_ativo = OFF, ciclo_oximetro = ON;
+volatile flag_t timer_amost = OFF, ciclo_oximetro = ON;
 volatile uint16_t acordar = TEMPO_SLEEP;
-extern volatile dht22_t dht22;
+estacao_t leitura;
+dht22_t dht22;
 
 /* Inicializacoes */
-void adcInit(){
-
-	// Entrada[1, 2] [ADC]
-	GPIO_C->DDR |= UNSET(PC0) | UNSET(PC1) | UNSET(PC2) | UNSET(PC3) | UNSET(PC4);	// GPIO_C->DDR |= ~(0b00000111);
-
-	// Configuracao
-	ADCS->AD_MUX = UNSET(REFS1) | SET(REFS0) | UNSET(ADLAR) | UNSET(MUX3) | UNSET(MUX2) | UNSET(MUX1) | UNSET(MUX0); // AVCC
-	ADCS->ADC_SRA = SET(ADEN) | SET(ADSC) | UNSET(ADATE) | SET(ADIE) | SET(ADPS2) | SET(ADPS1) | SET(ADPS0);
-
-	// Desabilitar parte digital
-	ADCS->DIDr0.BITS.ADC0 = 1;
-	ADCS->DIDr0.BITS.ADC1 = 1;
-	ADCS->DIDr0.BITS.ADC2 = 1;
-	ADCS->DIDr0.BITS.ADC3 = 1;
-	ADCS->DIDr0.BITS.ADC4 = 1;
-
-	chg_nibl(ADCS->AD_MUX, 0x01);	// SET(MUX0)
-
-}
-
 void timerInit(){
 
 	TIMER_0->TCCRA = UNSET(COM0A1) | UNSET(COM0A0) | UNSET(COM0B1) | UNSET(COM0B0) | UNSET(WGM01) | UNSET(WGM00);
@@ -57,54 +39,60 @@ void controleInit(){
 	//GPIO_D->DDR  |= SET(PD6) | SET(PD7);
 	//GPIO_D->PORT |= SET(PD0) | SET(PD1) | SET(PD2) | SET(PD3);
 
-	adcInit();
+	temtInit();
 	timerInit();
+	dht_init(&dht22, PB1);
 	curr_state = TEMPERATURA;
-
 
 	set_sleep_mode(SLEEP_MODE_IDLE); //SLEEP_MODE_EXT_STANDBY
 
 }
 
 /* funcoes da maquina de estado */
-void f_temperatura(){
+void f_temperatura()
+{
 
-	static uint16_t temp, umid;
-
-	if(dht_read_data(&dht22, &temp, &umid))
+	if(dht_read_data(&dht22, &leitura.temperatura, &leitura.umidade))
 	{
-		fprintf(get_usart_stream(), "---------------------------------\ntemperatura: %d.%d C\n\r", temp/10, temp%10);
-		fprintf(get_usart_stream(), "umidade: %d.%d%%\n---------------------------------\n\r", umid/10, umid%10);
+		fprintf(get_usart_stream(), "---------------------------------\ntemperatura: %d.%d C\n\r", leitura.temperatura/10, leitura.temperatura%10);
+		fprintf(get_usart_stream(), "umidade: %d.%d%%\n---------------------------------\n\r", leitura.umidade/10, leitura.umidade%10);
 	}
 
-	//curr_state = LUZ;
+	curr_state = LUZ;
 
 }
 
-void f_luz(){
+void f_luz()
+{
+	leitura.luz = temtRead();
+	fprintf(get_usart_stream(), "Luminosidade: %d\n\r", leitura.luz);
 
-	curr_state = RUIDO;
+	curr_state = TEMPERATURA;
 }
 
-void f_ruido(){
+void f_ruido()
+{
 
 	curr_state = PROCESSAMENTO;
 
 }
 
-void f_processamento(){
+void f_processamento()
+{
 
 	curr_state = ENVIO;
 }
 
-void f_envio(){
+void f_envio()
+{
 
 	curr_state = SLEEP;
 	_delay_ms(500);
 
 }
 
-void f_sleep(){
+void f_sleep()
+{
 
 	if(ciclo_oximetro == OFF){
 		if(acordar == 0){
@@ -122,12 +110,6 @@ void f_sleep(){
 }
 
 /* Interrupcoes */
-ISR(ADC_vect){
-
-
-
-}
-
 ISR(TIMER0_OVF_vect){ // 2ms
 
 	static uint8_t contTimer = 0;

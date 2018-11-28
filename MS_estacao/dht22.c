@@ -16,7 +16,7 @@
 
 void dht_init(dht22_t* dht, uint8_t pin)
 {
-    dht->pin = pin;
+    dht->pin |= pin;
     /* Setup the pins! */
     DDR_DHT &= ~(1 << dht->pin);
     PORT_DHT |= (1 << dht->pin);

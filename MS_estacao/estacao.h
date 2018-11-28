@@ -38,6 +38,12 @@ typedef struct {
 	void (*func)(void);
 }fsm_t;
 
+typedef struct{
+	uint16_t temperatura;
+	uint16_t umidade;
+	uint16_t luz;
+	uint8_t ruido;
+}estacao_t;
 
 // SM
 void f_temperatura();

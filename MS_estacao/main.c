@@ -15,13 +15,11 @@
 
 extern volatile state_t curr_state;
 extern fsm_t myFSM[];
-dht22_t dht22;
 
 int main(){
 
 	FILE *usart = get_usart_stream();
 	USART_Init(B9600);
-	dht_init(&dht22, PB1);
 	controleInit();
 	sei();
 

@@ -8,6 +8,6 @@
 #define cpl_bit(y,bit) 		(y^=(1<<bit))
 #define tst_bit(y,bit) 		(y&(1<<bit))
 #define chg_nibh(y,nib)		(y = (y&0x0F)|(nib<<4))
-#define chg_nibl(y,nib)		(y = (y&0xF0)|nib)
+#define chg_nibl(y,nib)		(y = ((y&0xF0) | (nib)))
 
 #endif /* BITS_H_ */
