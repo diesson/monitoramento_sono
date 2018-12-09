@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <util/delay.h>
 #include <avr/sleep.h>
+#include "lib/avr_usart.h"
+#include "lib/avr_extirq.h"
 // LIB
 #include "lib/bits.h"
 #include "lib/avr_gpio.h"
@@ -19,7 +21,7 @@
 #define N_AMOSTRAS 10
 #define VALOR_COMPARACAO 100
 
-typedef enum ctrl{OFF, ON, FALSE, TRUE, DESCENDO, SUBINDO} flag_t;
+//typedef enum ctrl{OFF, ON, FALSE, TRUE, DESCENDO, SUBINDO} flag_t;
 
 /* Definição dos estados */
 typedef enum {
@@ -42,14 +44,13 @@ typedef struct{
 	uint16_t temperatura;
 	uint16_t umidade;
 	uint16_t luz;
-	uint8_t ruido;
+	uint16_t ruido;
 }estacao_t;
 
 // SM
 void f_temperatura();
 void f_luz();
 void f_ruido();
-void f_processamento();
 void f_envio();
 void f_sleep();
 // Geral

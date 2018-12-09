@@ -20,10 +20,11 @@ int main(){
 
 	FILE *usart = get_usart_stream();
 	USART_Init(B9600);
+
 	controleInit();
 	sei();
 
-	fprintf(usart, "USART\n\r");
+	fprintf(usart, "temperatura; umidade; luz; ruido;\n\r");
 	_delay_ms(100);
 
 	while(1){

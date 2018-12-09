@@ -5,8 +5,8 @@
  *      Author: diesson
  */
 
-#ifndef TEMT6000_H_
-#define TEMT6000_H_
+#ifndef LDR_H_
+#define LDR_H_
 
 // AVR
 #include <avr/interrupt.h>
@@ -20,13 +20,14 @@
 #include "lib/avr_extirq.h"
 #include "lib/avr_adc.h"
 #include "lib/avr_timer.h"
+#include "funcoes.h"
 
 // Defines
-#define TEMT6000_PIN PC0
+#define LDR_PIN PC0
 
-void temtInit();
-uint16_t temtRead();
+void ldrInit();
+uint16_t ldrRead();
 
 
 
-#endif /* TEMT6000_H_ */
+#endif /* LDR_H_ */

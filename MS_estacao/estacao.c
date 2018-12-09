@@ -1,23 +1,25 @@
 #include "estacao.h"
-#include "lib/avr_usart.h"
+#include "funcoes.h"
 #include "dht22.h"
-#include "temt6000.h"
+#include "LDR.h"
 
 /* Mapeamento entre estado e funções */
 fsm_t myFSM[] = {
 	{ TEMPERATURA, f_temperatura },
 	{ LUZ, f_luz },
 	{ RUIDO, f_ruido },
-	{ PROCESSAMENTO, f_processamento },
-	{ ENVIO, f_envio }
+	{ ENVIO, f_envio },
+	{ SLEEP, f_sleep }
 };
 
 // Variaveis globais
 volatile state_t curr_state;
-volatile flag_t timer_amost = OFF, ciclo_oximetro = ON;
-volatile uint16_t acordar = TEMPO_SLEEP;
+volatile flag_t ciclo_ME = ON;
+volatile uint16_t cont_ruido = 0;
 estacao_t leitura;
 dht22_t dht22;
+
+extern volatile timer_t temporizador;
 
 /* Inicializacoes */
 void timerInit(){
@@ -31,6 +33,10 @@ void timerInit(){
 	TIMER_IRQS->TC1.BITS.OCIEA = 1;
 	TIMER_1->OCRA = 2500;
 
+	temporizador.timer0_status = OFF;
+	temporizador.timer0_tempo = 0;
+	temporizador.timer1_tempo = TEMPO_SLEEP;
+
 }
 
 void controleInit(){
@@ -39,7 +45,12 @@ void controleInit(){
 	//GPIO_D->DDR  |= SET(PD6) | SET(PD7);
 	//GPIO_D->PORT |= SET(PD0) | SET(PD1) | SET(PD2) | SET(PD3);
 
-	temtInit();
+	GPIO_B->DDR  &= ~(1 << PB0);
+	GPIO_B->PORT |= (1 << PB0);
+	EXT_IRQ->PC_INT.BITS.PCIE_0 = 1;
+	EXT_IRQ_PCINT_MASK->PCMASK0.BITS.PCINT_0 = 1;
+
+	ldrInit();
 	timerInit();
 	dht_init(&dht22, PB1);
 	curr_state = TEMPERATURA;
@@ -51,40 +62,40 @@ void controleInit(){
 /* funcoes da maquina de estado */
 void f_temperatura()
 {
-
-	if(dht_read_data(&dht22, &leitura.temperatura, &leitura.umidade))
-	{
-		fprintf(get_usart_stream(), "---------------------------------\ntemperatura: %d.%d C\n\r", leitura.temperatura/10, leitura.temperatura%10);
-		fprintf(get_usart_stream(), "umidade: %d.%d%%\n---------------------------------\n\r", leitura.umidade/10, leitura.umidade%10);
-	}
+	while(!dht_read_data(&dht22, &leitura.temperatura, &leitura.umidade));
+	fprintf(get_usart_stream(), "*");
 
 	curr_state = LUZ;
-
 }
 
 void f_luz()
 {
-	leitura.luz = temtRead();
-	fprintf(get_usart_stream(), "Luminosidade: %d\n\r", leitura.luz);
+	leitura.luz = ldrRead();
+	fprintf(get_usart_stream(), "*");
 
-	curr_state = TEMPERATURA;
+	curr_state = RUIDO;
 }
 
 void f_ruido()
 {
-
-	curr_state = PROCESSAMENTO;
-
-}
-
-void f_processamento()
-{
-
+	leitura.ruido = cont_ruido;
+	cont_ruido = 0;
+	fprintf(get_usart_stream(), "*");
 	curr_state = ENVIO;
 }
 
 void f_envio()
 {
+
+	fprintf(get_usart_stream(), "%d.%d; %d.%d; %d; %d;\n\r", leitura.temperatura/10, leitura.temperatura%10,
+															leitura.umidade/10, leitura.umidade%10,
+															leitura.luz,
+															leitura.ruido);
+
+	ciclo_ME = OFF;
+	timerOff();
+	adcOff();
+	sleep_enable();
 
 	curr_state = SLEEP;
 	_delay_ms(500);
@@ -94,37 +105,39 @@ void f_envio()
 void f_sleep()
 {
 
-	if(ciclo_oximetro == OFF){
-		if(acordar == 0){
-			ciclo_oximetro = ON;
+	if(ciclo_ME == OFF){
+		if(temporizador.timer1_tempo == 0){
+			ciclo_ME = ON;
 			sleep_disable();
-			acordar = TEMPO_SLEEP;
-			//curr_state = VERMELHO;
-			curr_state = ENVIO;
+			temporizador.timer1_tempo = TEMPO_SLEEP;
+			curr_state = TEMPERATURA;
 		}else{
 			sleep_cpu();
-			curr_state = TEMPERATURA;
 		}
 	}
 
 }
 
 /* Interrupcoes */
-ISR(TIMER0_OVF_vect){ // 2ms
+ISR(TIMER0_OVF_vect){ // 1ms
 
-	static uint8_t contTimer = 0;
-
-	if(contTimer > 1){
-		timer_amost = ON;
-		contTimer = 0;
-	}
-	contTimer++;
+	if((temporizador.timer0_tempo) && (temporizador.timer0_status = OFF)){
+		temporizador.timer0_tempo--;
+	}else
+		temporizador.timer0_status = ON;
 
 }
 
 ISR(TIMER1_COMPA_vect){ // 10ms
 
-	if(ciclo_oximetro == OFF)
-		acordar--;
+	if(ciclo_ME == OFF)
+		temporizador.timer1_tempo--;
+
+}
+
+ISR(PCINT0_vect){
+
+	if(!tst_bit(PINB,PB0))
+		cont_ruido++;
 
 }
