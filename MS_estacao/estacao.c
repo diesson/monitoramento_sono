@@ -19,7 +19,7 @@ volatile uint16_t cont_ruido = 0;
 estacao_t leitura;
 dht22_t dht22;
 
-extern volatile timer_t temporizador;
+extern volatile timer_t controle_timer;
 
 /* Inicializacoes */
 void timerInit(){
@@ -33,9 +33,9 @@ void timerInit(){
 	TIMER_IRQS->TC1.BITS.OCIEA = 1;
 	TIMER_1->OCRA = 2500;
 
-	temporizador.timer0_status = OFF;
-	temporizador.timer0_tempo = 0;
-	temporizador.timer1_tempo = TEMPO_SLEEP;
+	controle_timer.timer0_status = OFF;
+	controle_timer.timer0_tempo = 0;
+	controle_timer.timer1_tempo = TEMPO_SLEEP;
 
 }
 
@@ -63,7 +63,6 @@ void controleInit(){
 void f_temperatura()
 {
 	while(!dht_read_data(&dht22, &leitura.temperatura, &leitura.umidade));
-	fprintf(get_usart_stream(), "*");
 
 	curr_state = LUZ;
 }
@@ -71,7 +70,6 @@ void f_temperatura()
 void f_luz()
 {
 	leitura.luz = ldrRead();
-	fprintf(get_usart_stream(), "*");
 
 	curr_state = RUIDO;
 }
@@ -80,7 +78,6 @@ void f_ruido()
 {
 	leitura.ruido = cont_ruido;
 	cont_ruido = 0;
-	fprintf(get_usart_stream(), "*");
 	curr_state = ENVIO;
 }
 
@@ -98,7 +95,6 @@ void f_envio()
 	sleep_enable();
 
 	curr_state = SLEEP;
-	_delay_ms(500);
 
 }
 
@@ -106,10 +102,10 @@ void f_sleep()
 {
 
 	if(ciclo_ME == OFF){
-		if(temporizador.timer1_tempo == 0){
+		if(controle_timer.timer1_tempo == 0){
 			ciclo_ME = ON;
 			sleep_disable();
-			temporizador.timer1_tempo = TEMPO_SLEEP;
+			controle_timer.timer1_tempo = TEMPO_SLEEP;
 			curr_state = TEMPERATURA;
 		}else{
 			sleep_cpu();
@@ -121,17 +117,17 @@ void f_sleep()
 /* Interrupcoes */
 ISR(TIMER0_OVF_vect){ // 1ms
 
-	if((temporizador.timer0_tempo) && (temporizador.timer0_status = OFF)){
-		temporizador.timer0_tempo--;
+	if((controle_timer.timer0_tempo) && (controle_timer.timer0_status = OFF)){
+		controle_timer.timer0_tempo--;
 	}else
-		temporizador.timer0_status = ON;
+		controle_timer.timer0_status = ON;
 
 }
 
 ISR(TIMER1_COMPA_vect){ // 10ms
 
 	if(ciclo_ME == OFF)
-		temporizador.timer1_tempo--;
+		controle_timer.timer1_tempo--;
 
 }
 
