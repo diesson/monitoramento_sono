@@ -102,18 +102,82 @@ Figura 6. Estrutura de blocos do oxímetro.
 
 Após obtido o sinal, o mesmo é enviado para um microcontrolador, onde é feito o cálculo da oxigenação sanguínea e dos batimentos cardíacos. Assim, para a sua amostragem, o circuito proposto consiste no acionamento do LED vermelho e do infravermelho de forma alternada utilizando um mesmo fotodetector, e em seguida, com dois circuitos integrados de amostragem (*sample and hold*) estes sinais seriam separados. Com ambos os sinais já separados, os mesmo passariam por um circuito de filtro chebyshev passa-baixa com frequência de 15 Hz, para que os sinais pudessem ser reconstruídos da melhor forma possível, eliminando possíveis discretizações geradas pelo amostrador. Neste ponto, a tensão média do sinal vermelho e infravermelho podem ser obtidos para o cálculo. 
 
-Em seguida, utilizando um filtro chebyshev passa-alta, com frequência de 50 mHz, é eliminado toda a parte CC do sinal, permitindo, assim, que seja aplicado um ganho controlável utilizando um PGA (*programmable-gain amplifier*) apenas no sinal alternado, passando, em seguida, por um circuito somador, para que o sinal fique inteiramente positivo (entre 0 e 5 V), possibilitando, assim, a amostragem do sinal pelo ADC do microcontrolador. 
+Em seguida, utilizando um filtro chebyshev passa-alta, com frequência de 50 mHz, é eliminado toda a parte CC do sinal, permitindo, assim, que seja aplicado um ganho controlável utilizando um PGA (*programmable-gain amplifier*) apenas no sinal alternado, passando, em seguida, por um circuito somador, para que o sinal fique inteiramente positivo (entre 0 e 5 V), possibilitando, assim, a amostragem do sinal pelo ADC do microcontrolador. Na figura 7 é apresentando o circuito utilizado, com os valores de componentes calculados. 
+
+![Polissonografia_7](./images/figura7.png "Circuito do oximetro com valores calculados")
+
+Figura 7. Circuito do oximetro com valores calculados.
 
 Com a amostragem pelo microcontrolador, pode-se realizar os cálculos da oxigenação sanguínea e, utilizando um algoritmo de detecção de pico, realizar a contagem dos batimentos cardíacos, com base no período do sinal amostrado. Na Figura 7 e Figura 8 pode ser observado a montagem do circuito de teste e o prototipo final, respectivamente.
 
 APRESENTAR A ESTRUTURA DE BLOCOS DO OXÍMETRO
-![Polissonografia_7](./images/figura7.png "Estrutura de blocos do oxímetro")
+![Polissonografia_8](./images/figura8.png "Protótipo de testes")
 
-Figura 7. Prototipo de testes.
+Figura 8. Protótipo de testes.
 
-![Polissonografia_8](./images/figura8.png "Estrutura de blocos do oxímetro")
+![Polissonografia_9](./images/figura9.png "Circuito implementado")
 
-Figura 8. Circuito implementado.
+Figura 9. Circuito implementado.
+
+### Acelerometro:
+
+### Cinta de monitoramento respiratório:
+
+### Sensor de temperatura corporal:
+
+### Microcontrolador e sistema:
+
+Para este projeto, optou-se pela utilização do microcontrolador ATmega328p programado em linguagem C, devido a familiaridade e o fácil uso do microcontrolador. O ATmega328p, segundo Lima e Villaça (2012), é um microcontrolador de 8 bits de baixa potência, com arquitetura RISC avançada. 
+
+Para o programa do microcontrolador, optou-se pela elaboração de uma máquina de estados, como apresentado na Figura 10, utilizando um ponteiro de função. Esta máquina de estados permite que o microcontrolador faças as aquisições necessárias, e, logo em seguida, entre em um estado de baixo consumo (*sleep*).
+
+![Polissonografia_10](./images/figura10.png "Máquina de estados da luva de monitoramento corporal")
+
+Figura 10. Máquina de estados da luva de monitoramento corporal.
+
+Após a inicialização do microcontrolador, o mesmo entra na função de inicialização da máquina de estados, responsável pela inicialização das variáveis, dos temporizadores (*timers*) e do ADC (*analog to digital converter*). Em seguida, os estados começam a operar, tendo início pelo estado “vermelho”, seguido pelos estados “infravermelho” e “processamento”. Estes estados são responsáveis pela leitura e processamento dos dados proveniente do oxímetro. Neste processo, é realizada a aquisição dos sinais vermelho e infravermelho, para ser calculado os níveis de oxigenação do sangue e feito a detecção de pico do sinal, para assim, ser calculado o período do sinal, para que seja obtido o número de batimentos por minuto. 
+
+Após detectado um período, ou seja, após ser identificado dois picos do sinal, os dados proveniente dessas leituras (valores de tensão máxima, valores de tensão mínima, valores de tensão média e valor do período do sinal em milissegundos) são armazenados, e então, alterna-se para o estado “enviar”, onde é realizado os cálculos e enviado as informações para o computador do usuário e, em seguida, o microcontrolador alterna para o estado “*sleep*”, onde é colocado no modo de economia de energia.
+
+No estado “*sleep*” o microcontrolador é desperto a cada 10 ms, devido a um timer, e assim, o microcontrolador verifica se houve alguma mudança nos valores do acelerômetro desde a sua última leitura. Em caso afirmativo, o mesmo entra no estado de “movimento” onde é registrado a mudança, para que então retorne para o estado de economia de energia. Esse ciclo continua se repetindo até que se tenha completado um tempo de 5 minutos, onde o mesmo desperta e entra em no estado “temperatura”, para que seja feita a leitura da temperatura corporal do usuário, e em seguida, retorna para os estados de aquisição do oxímetro. Este período de aquisição a cada 5 minutos foi arbitrado com base nos dispositivos de monitoramento de sono já presentes no mercado. 
+
+### Resultados da luva de monitoramento de sinais vitais:
+
+## Estação base para monitoramento do ambiente:
+
+A estação base para o monitoramento do ambiente, foi concebida para que o usuário pudesse ter um *feedback* sobre as possíveis causas da sua noite de sono mal dormida, complementando os dados da luva. Esta estação possui três sensores para a medição de quatro importantes medidas do ambiente, a temperatura, a umidade, a luminosidade e o nível de ruído. Para a programação do microcontrolador, optou-se, semelhante a luva de monitoramento de sinais vitais, pela criação de uma máquina de estados, contendo 3 estados básicos de leitura (temperatura, luz e ruído) e um estado de processamento, de envio da informação e de estado de *sleep*.
+
+### Sensor de temperatura e umidade: 
+Visando fazer a medição dos níveis de umidade do ar e da temperatura ambiente, optou-se pela utilização de um DHT22, um sensor de temperatura e humidade que utiliza comunicação 1-wire com o microcontrolador. Tratando-se de um sensor simples, não necessitando de inicialização, apenas que seja requisitado um determinado dado em um endereço específico de sua memória. A Figura 11 apresenta o protótipo utilizado para testes do sensor. 
+
+![Polissonografia_11](./images/figura11.png "Protótipo utilizado para testes do sensor")
+
+Figura 11. Protótipo utilizado para testes do sensor.
+
+Em nosso microcontrolador, a cada 5 minutos, após o mesmo sair do estado de sleep, requisita os dados do DHT22, recebendo as informações de temperatura e umidade ambiente, e assim, armazena em uma estrutura de dados, que posteriormente é enviado para o computador do usuário. 
+
+### Sensor de luminosidade:
+Para o monitoramento da luz ambiente, optou-se inicialmente pela utilização de um TEMT6000, por possuir uma melhor precisão na aquisição da variação de luminosidade. Mas, devido a sensor já possuir um resistor de 10 kΩ para o seu ganho, o mesmo dificultava a medição da luminosidade em baixos níveis de luz. Assim, após testes, optou-se pela substituição deste sensor pela utilização de um LDR juntamente com um resistor de 68 kΩ, fornecendo niveis de tensão melhores para baixa luminosidade, saturando em niveis elevados (o que não nos gera nenhum impecilho, uma vez que a utilização do circuito é voltado para ambientes escuros). O circuito utilizado para a medição dos níveis de luminosidade é apresentado na Figura 12. 
+
+![Polissonografia_12](./images/figura12.png "Circuito utilizado para a medição dos níveis de luminosidade")
+
+Figura 12. Circuito utilizado para a medição dos níveis de luminosidade.
+
+Após adquirido os dados proveniente do DHT22, em nosso microcontrolador, é realizada a medição da tensão proveniente do LDR, utilizando o seu ADC, para que assim, em seguida, essa informação seja enviada para o computador do usuário.
+
+### Sensor de detecção do nível de ruído:
+
+Devido a simplicidade da criação desse sensor, optou-se pela montagem do mesmo. Este circuito consiste, basicamente, em um microfone de eletreto com um bloco de ganho e um bloco de comparação, onde pode ser ajustado o nível de tensão (ou a amplitude máxima do ruído) para a comparação. A Figura 13 apresenta o circuito de ganho e comparação utilizado.
+
+![Polissonografia_13](./images/figura13.png "Circuito de ganho e comparação simulado para a detecção de ruído")
+
+Figura 13. Circuito de ganho e comparação simulado para a detecção de ruído.
+
+Em seguida, após simulação, montagem e testes, tendo realizado alguns ajustes de valores de componentes, iniciou-se testes junto ao microcontrolador. Ao atingir determinado valor de tensão com o microfone, o bloco de comparação irá chavear para nível lógico alto, ativando uma interrupção por borda de subida no microcontrolador, e assim, podendo ser contado a quantidade de vezes que este ruído ocorreu dentro de um determinado período de tempo. O período de contagem estabelecido foi de 5 minutos, enquanto o microcontrolador está em estado de sleep, pois, mesmo nesse estado, as interrupções ainda estão ativas. Após aquisição do nível de luminosidade, o microcontrolador salva na estrutura de dados a quantidade de interrupções feitas no período estabelecido, e assim, em seguida é enviado essas informações para o usuário. 
+
+### Microcontrolador e comunicação:
+
+### Protótipo da estação base: 
 
 ## Autores
 * Diesson Stefano Allebrandt
