@@ -9,17 +9,21 @@
 volatile timer_t controle_timer;
 
 void timerOn(uint8_t t_ms){
-	TIMER_IRQS->TC0.BITS.TOIE = 1;
-	controle_timer.timer0_tempo = t_ms;
-	controle_timer.timer0_status = OFF;
+	TIMER_IRQS->TC2.BITS.TOIE = 1;
+	controle_timer.timer2_tempo = t_ms;
+	controle_timer.timer2_status = OFF;
+}
+
+void timer01State(flag_t flag){
+	TIMER_IRQS->TC1.BITS.OCIEA = flag;
 }
 
 void timerOff(void){
-	TIMER_IRQS->TC0.BITS.OCIEA = 0;
+	TIMER_IRQS->TC2.BITS.OCIEA = 0;
 }
 
 void timerWait(void){
-	while(!controle_timer.timer0_status);
+	while(!controle_timer.timer2_status);
 }
 
 void adcOn(uint8_t op){

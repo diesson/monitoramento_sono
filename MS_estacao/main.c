@@ -12,6 +12,7 @@
 #include "estacao.h"
 #include "lib/avr_usart.h"
 #include "dht22.h"
+#include "lib/softuart.h"
 
 extern volatile state_t curr_state;
 extern fsm_t myFSM[];
@@ -21,10 +22,13 @@ int main(){
 	FILE *usart = get_usart_stream();
 	USART_Init(B9600);
 
+	softuart_init();
+	softuart_turn_rx_on(); /* redundant - on by default */
 	controleInit();
 	sei();
 
 	fprintf(usart, "temperatura; umidade; luz; ruido;\n\r");
+
 	_delay_ms(100);
 
 	while(1){

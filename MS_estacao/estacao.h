@@ -15,9 +15,10 @@
 #include "lib/avr_extirq.h"
 #include "lib/avr_adc.h"
 #include "lib/avr_timer.h"
+#include "lib/softuart.h"
 
 // Define
-#define TEMPO_SLEEP  1000//30000
+#define TEMPO_SLEEP  30000//1000
 #define N_AMOSTRAS 10
 #define VALOR_COMPARACAO 100
 
@@ -43,7 +44,7 @@ typedef struct{
 	uint16_t temperatura;
 	uint16_t umidade;
 	uint16_t luz;
-	uint16_t ruido;
+	uint32_t ruido;
 }estacao_t;
 
 // SM

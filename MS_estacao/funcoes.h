@@ -25,8 +25,8 @@
 typedef enum ctrl{OFF, ON, FALSE, TRUE, DESCENDO, SUBINDO} flag_t;
 
 typedef struct {
-	flag_t timer0_status;		 	//flag_t timer_amost = OFF;
-	uint8_t timer0_tempo; 			//volatile uint8_t contTimer = 0;
+	flag_t timer2_status;		 	//flag_t timer_amost = OFF;
+	uint8_t timer2_tempo; 			//volatile uint8_t contTimer = 0;
 	uint16_t timer1_tempo; 			//volatile uint16_t acordar = TEMPO_SLEEP;
 }timer_t;
 
@@ -35,5 +35,6 @@ void timerOff(void);
 void timerWait(void);
 void adcOn(uint8_t op);
 void adcOff();
+void timer01State(flag_t flag);
 
 #endif /* FUNCOES_H_ */

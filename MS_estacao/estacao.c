@@ -15,7 +15,7 @@ fsm_t myFSM[] = {
 // Variaveis globais
 volatile state_t curr_state;
 volatile flag_t ciclo_ME = ON;
-volatile uint16_t cont_ruido = 0;
+volatile uint32_t cont_ruido = 0;
 estacao_t leitura;
 dht22_t dht22;
 
@@ -24,8 +24,8 @@ extern volatile timer_t controle_timer;
 /* Inicializacoes */
 void timerInit(){
 
-	TIMER_0->TCCRA = UNSET(COM0A1) | UNSET(COM0A0) | UNSET(COM0B1) | UNSET(COM0B0) | UNSET(WGM01) | UNSET(WGM00);
-	TIMER_0->TCCRB = SET(WGM02) | UNSET(CS02) | SET(CS01) | SET(CS00); // ~1.02ms presc = 64
+	TIMER_2->TCCRA = UNSET(COM2A1) | UNSET(COM2A0) | UNSET(COM2B1) | UNSET(COM2B0) | UNSET(WGM21) | UNSET(WGM20);
+	TIMER_2->TCCRB = SET(WGM22) | UNSET(CS22) | SET(CS21) | SET(CS20); // ~1.02ms presc = 64
 	//TIMER_IRQS->TC0.BITS.TOIE = 1;
 
 	TIMER_1->TCCRA = UNSET(COM1A1) | UNSET(COM1A0) | UNSET(COM1B1) | UNSET(COM1B0) | UNSET(WGM11) | UNSET(WGM10);
@@ -33,8 +33,8 @@ void timerInit(){
 	TIMER_IRQS->TC1.BITS.OCIEA = 1;
 	TIMER_1->OCRA = 2500;
 
-	controle_timer.timer0_status = OFF;
-	controle_timer.timer0_tempo = 0;
+	controle_timer.timer2_status = OFF;
+	controle_timer.timer2_tempo = 0;
 	controle_timer.timer1_tempo = TEMPO_SLEEP;
 
 }
@@ -84,17 +84,30 @@ void f_ruido()
 void f_envio()
 {
 
-	fprintf(get_usart_stream(), "%d.%d; %d.%d; %d; %d;\n\r", leitura.temperatura/10, leitura.temperatura%10,
+	timerOff();
+	adcOff();
+	timer01State(OFF);
+	fprintf(get_usart_stream(), "%d.%d; %d.%d; %d; %lu;\n\r", leitura.temperatura/10, leitura.temperatura%10,
 															leitura.umidade/10, leitura.umidade%10,
 															leitura.luz,
 															leitura.ruido);
 
-	ciclo_ME = OFF;
-	timerOff();
-	adcOff();
-	sleep_enable();
+	if(softuart_transmit_busy() == 0)
+	{
+		softuart_print("%d.%d; %d.%d; %d; %lu;\n\r", leitura.temperatura/10, leitura.temperatura%10,
+															leitura.umidade/10, leitura.umidade%10,
+															leitura.luz,
+															leitura.ruido);
+	}
+	//fprintf(get_usart_stream(), "%c\n\r", softuart_getchar());
 
-	curr_state = SLEEP;
+	ciclo_ME = OFF;
+	sleep_enable();
+	timer01State(ON);
+
+	curr_state = TEMPERATURA;
+	_delay_ms(500);
+	//curr_state = SLEEP;
 
 }
 
@@ -111,22 +124,22 @@ void f_sleep()
 			sleep_cpu();
 		}
 	}
-
 }
 
 /* Interrupcoes */
-ISR(TIMER0_OVF_vect){ // 1ms
+ISR(TIMER2_OVF_vect){ // 1ms
 
-	if((controle_timer.timer0_tempo) && (controle_timer.timer0_status = OFF)){
-		controle_timer.timer0_tempo--;
+	if((controle_timer.timer2_tempo) && (controle_timer.timer2_status = OFF)){
+		controle_timer.timer2_tempo--;
 	}else
-		controle_timer.timer0_status = ON;
+		controle_timer.timer2_status = ON;
 
 }
 
 ISR(TIMER1_COMPA_vect){ // 10ms
 
 	if(ciclo_ME == OFF)
+		if(controle_timer.timer1_tempo > 0)
 		controle_timer.timer1_tempo--;
 
 }
@@ -134,6 +147,7 @@ ISR(TIMER1_COMPA_vect){ // 10ms
 ISR(PCINT0_vect){
 
 	if(!tst_bit(PINB,PB0))
-		cont_ruido++;
+		if(cont_ruido < 4200000000)
+			cont_ruido++;
 
 }

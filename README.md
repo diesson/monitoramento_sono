@@ -89,22 +89,31 @@ Figura 4. Espectro de absorção de luz das hemoglobinas HbO<sub>2</sub> e Hb.
 
 Para este projeto, foi utilizado o oxímetro de pulso transmissivo, ainda havendo o oxímetro de pulso reflexivo, que não foi utilizado devido a sua complexidade de projeto. O circuito básico de um oxímetro de pulso consiste na utilização de dois LEDs (um vermelho e outro infravermelho) para a emissão da luz e um fotodetector para a leitura da luz transmitida, estando o fotodetector posicionado de maneira oposta aos LEDs, como pode ser observado na Figura 5. Para este projeto, foi utilizado o fototransistor TIL78 como fotodetector e o LED infravermelho TIL32 e um LED vermelho de alto brilho como fototransmissores.
 
-VAI UMA FIGURA DA POSICAO DOS LEDS AKI
-![Polissonografia_5](./images/figura4.png "Espectro de absorção de luz das hemoglobinas HbO2 e Hb")
+![Polissonografia_5](./images/figura5.png "Posicionamento dos LEDs e fotodetector")
 
-Figura 5. VAI UMA FIGURA DA POSICAO DOS LEDS AKI.
+Figura 5. Posicionamento dos LEDs e fotodetector.
+
+O diagrama de blocos do circuito do oxímetro pode ser observado na Figura 6.
+
+APRESENTAR A ESTRUTURA DE BLOCOS DO OXÍMETRO
+![Polissonografia_6](./images/figura6.png "Estrutura de blocos do oxímetro")
+
+Figura 6. Estrutura de blocos do oxímetro.
 
 Após obtido o sinal, o mesmo é enviado para um microcontrolador, onde é feito o cálculo da oxigenação sanguínea e dos batimentos cardíacos. Assim, para a sua amostragem, o circuito proposto consiste no acionamento do LED vermelho e do infravermelho de forma alternada utilizando um mesmo fotodetector, e em seguida, com dois circuitos integrados de amostragem (*sample and hold*) estes sinais seriam separados. Com ambos os sinais já separados, os mesmo passariam por um circuito de filtro chebyshev passa-baixa com frequência de 15 Hz, para que os sinais pudessem ser reconstruídos da melhor forma possível, eliminando possíveis discretizações geradas pelo amostrador. Neste ponto, a tensão média do sinal vermelho e infravermelho podem ser obtidos para o cálculo. 
 
 Em seguida, utilizando um filtro chebyshev passa-alta, com frequência de 50 mHz, é eliminado toda a parte CC do sinal, permitindo, assim, que seja aplicado um ganho controlável utilizando um PGA (*programmable-gain amplifier*) apenas no sinal alternado, passando, em seguida, por um circuito somador, para que o sinal fique inteiramente positivo (entre 0 e 5 V), possibilitando, assim, a amostragem do sinal pelo ADC do microcontrolador. 
 
-Com a amostragem pelo microcontrolador, pode-se realizar os cálculos da oxigenação sanguínea e, utilizando um algoritmo de detecção de pico, realizar a contagem dos batimentos cardíacos, com base no período do sinal amostrado. 
+Com a amostragem pelo microcontrolador, pode-se realizar os cálculos da oxigenação sanguínea e, utilizando um algoritmo de detecção de pico, realizar a contagem dos batimentos cardíacos, com base no período do sinal amostrado. Na Figura 7 e Figura 8 pode ser observado a montagem do circuito de teste e o prototipo final, respectivamente.
 
 APRESENTAR A ESTRUTURA DE BLOCOS DO OXÍMETRO
-![Polissonografia_6](./images/figura4.png "Espectro de absorção de luz das hemoglobinas HbO2 e Hb")
+![Polissonografia_7](./images/figura7.png "Estrutura de blocos do oxímetro")
 
-Figura 6. APRESENTAR A ESTRUTURA DE BLOCOS DO OXÍMETRO.
+Figura 7. Prototipo de testes.
 
+![Polissonografia_8](./images/figura8.png "Estrutura de blocos do oxímetro")
+
+Figura 8. Circuito implementado.
 
 ## Autores
 * Diesson Stefano Allebrandt
