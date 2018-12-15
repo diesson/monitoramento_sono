@@ -16,6 +16,8 @@
 #include "oximetro.h"
 #include "monitor.h"
 
+#define N_TESTE 5
+
 typedef enum ctrl{OFF, ON, FALSE, TRUE, DESCENDO, SUBINDO} flag_t;
 typedef enum pga{PGA_IRED, PGA_RED, PGA_RESET} pga_t;
 

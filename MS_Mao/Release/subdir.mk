@@ -7,19 +7,22 @@ C_SRCS += \
 ../accelerometer.c \
 ../main.c \
 ../monitor.c \
-../oximetro.c 
+../oximetro.c \
+../temperatura.c 
 
 OBJS += \
 ./accelerometer.o \
 ./main.o \
 ./monitor.o \
-./oximetro.o 
+./oximetro.o \
+./temperatura.o 
 
 C_DEPS += \
 ./accelerometer.d \
 ./main.d \
 ./monitor.d \
-./oximetro.d 
+./oximetro.d \
+./temperatura.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

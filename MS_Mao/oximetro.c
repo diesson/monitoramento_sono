@@ -69,14 +69,14 @@ flag_t oximetroInclinacao(uint16_t atual, uint16_t anterior, flag_t status){
 
 	if(atual > anterior){
 		cont_subida++;
-		if(cont_subida == 5){
+		if(cont_subida == N_TESTE){
 			status = SUBINDO;
 			cont_descida = 0;
 			cont_subida = 0;
 		}
 	}else if(atual < anterior){
 		cont_descida++;
-		if(cont_descida == 5){
+		if(cont_descida == N_TESTE){
 			status = DESCENDO;
 			cont_descida = 0;
 			cont_subida = 0;
@@ -92,45 +92,45 @@ uint8_t setControlePGA(pga_t pga, uint8_t op){
 	switch(op){
 	case 0:
 		if(pga == PGA_IRED){
-			clr_bit(CTRL_LED->PORT, P_ganhoA0);
-			clr_bit(CTRL_LED->PORT, P_ganhoA1);
+			clr_bit(CTRL_PGA->PORT, P_ganhoA0);
+			clr_bit(CTRL_PGA->PORT, P_ganhoA1);
 			ganho_pga_IR = 1;
 		}else{
-			clr_bit(CTRL_LED->PORT, P_ganhoA2);
-			clr_bit(CTRL_LED->PORT, P_ganhoA3);
+			clr_bit(CTRL_PGA->PORT, P_ganhoA2);
+			clr_bit(CTRL_PGA->PORT, P_ganhoA3);
 			ganho_pga_R = 1;
 		}
 		break;
 	case 1:
 		if(pga == PGA_IRED){
-			set_bit(CTRL_LED->PORT, P_ganhoA0);
-			clr_bit(CTRL_LED->PORT, P_ganhoA1);
+			set_bit(CTRL_PGA->PORT, P_ganhoA0);
+			clr_bit(CTRL_PGA->PORT, P_ganhoA1);
 			ganho_pga_IR = 2;
 		}else{
-			set_bit(CTRL_LED->PORT, P_ganhoA2);
-			clr_bit(CTRL_LED->PORT, P_ganhoA3);
+			set_bit(CTRL_PGA->PORT, P_ganhoA2);
+			clr_bit(CTRL_PGA->PORT, P_ganhoA3);
 			ganho_pga_R = 2;
 		}
 		break;
 	case 2:
 		if(pga == PGA_IRED){
-			clr_bit(CTRL_LED->PORT, P_ganhoA0);
-			set_bit(CTRL_LED->PORT, P_ganhoA1);
+			clr_bit(CTRL_PGA->PORT, P_ganhoA0);
+			set_bit(CTRL_PGA->PORT, P_ganhoA1);
 			ganho_pga_IR = 4;
 		}else{
-			clr_bit(CTRL_LED->PORT, P_ganhoA2);
-			set_bit(CTRL_LED->PORT, P_ganhoA3);
+			clr_bit(CTRL_PGA->PORT, P_ganhoA2);
+			set_bit(CTRL_PGA->PORT, P_ganhoA3);
 			ganho_pga_R = 4;
 		}
 		break;
 	case 3:
 		if(pga == PGA_IRED){
-			set_bit(CTRL_LED->PORT, P_ganhoA0);
-			set_bit(CTRL_LED->PORT, P_ganhoA1);
+			set_bit(CTRL_PGA->PORT, P_ganhoA0);
+			set_bit(CTRL_PGA->PORT, P_ganhoA1);
 			ganho_pga_IR = 8;
 		}else{
-			set_bit(CTRL_LED->PORT, P_ganhoA2);
-			set_bit(CTRL_LED->PORT, P_ganhoA3);
+			set_bit(CTRL_PGA->PORT, P_ganhoA2);
+			set_bit(CTRL_PGA->PORT, P_ganhoA3);
 			ganho_pga_R = 8;
 		}
 		break;
@@ -151,13 +151,13 @@ uint16_t getControlePga(uint16_t maximo, pga_t pga){
 	if(pga == PGA_IRED){
 
 		cont_IR++;
-		if( (cont_IR == 150) && (maximo < 512) ){
+		if( (cont_IR == 150) && (maximo < 128) ){
 			cont_IR = 0;
 			maximo = 0;
 			op_pga_IR++;
 			if(op_pga_IR == 4)
 				op_pga_IR = 3;
-		}else if( (cont_IR == 150) && (maximo > 800) ){
+		}else if( (cont_IR == 150) && (maximo > 200) ){
 			cont_IR = 0;
 			maximo = 0;
 			op_pga_IR--;

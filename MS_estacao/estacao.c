@@ -83,31 +83,54 @@ void f_ruido()
 
 void f_envio()
 {
+	uint8_t c, i = 0, j = 0, k = 0;
+	uint8_t buffer[50] = {0};
 
 	timerOff();
 	adcOff();
 	timer01State(OFF);
-	fprintf(get_usart_stream(), "%d.%d; %d.%d; %d; %lu;\n\r", leitura.temperatura/10, leitura.temperatura%10,
-															leitura.umidade/10, leitura.umidade%10,
-															leitura.luz,
-															leitura.ruido);
 
-	if(softuart_transmit_busy() == 0)
+	j = 0;
+
+	do
 	{
-		softuart_print("%d.%d; %d.%d; %d; %lu;\n\r", leitura.temperatura/10, leitura.temperatura%10,
-															leitura.umidade/10, leitura.umidade%10,
-															leitura.luz,
-															leitura.ruido);
-	}
-	//fprintf(get_usart_stream(), "%c\n\r", softuart_getchar());
+		if(j == 0){
+			softuart_print("*\r");
+			k++;
+			//fprintf(get_usart_stream(), "*");
+		}
+		j++;
+
+		c = softuart_getchar();
+		//fprintf(get_usart_stream(), "%c", c);
+		if(c != '\n')
+		{
+			if(c != '\r')
+				buffer[i] = c;
+			i++;
+		}
+		if(k == 100)
+			break;
+
+	}while(c != '\r');
+
+	fprintf(get_usart_stream(), "%s; %d.%d; %d.%d; %d; %lu;\n\r", buffer,
+																	leitura.temperatura/10, leitura.temperatura%10,
+																	leitura.umidade/10, leitura.umidade%10,
+																	leitura.luz,
+																	leitura.ruido);
+
+
+	for(j = 0; j < 50; j++)
+		buffer[j] = 0;
 
 	ciclo_ME = OFF;
 	sleep_enable();
 	timer01State(ON);
 
-	curr_state = TEMPERATURA;
+	//curr_state = TEMPERATURA;
 	_delay_ms(500);
-	//curr_state = SLEEP;
+	curr_state = SLEEP;
 
 }
 

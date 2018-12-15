@@ -283,8 +283,15 @@ void softuart_init( void )
 	timer_init();
 }
 
-static void idle(void)
+uint8_t idle(void)
 {
+	static uint8_t i = 0;
+	i++;
+	if(i == 0){
+		i = 0;
+		return 1;
+	}else
+		return 0;
 	// timeout handling goes here
 	// - but there is a "softuart_kbhit" in this code...
 	// add watchdog-reset here if needed
@@ -302,17 +309,23 @@ void softuart_turn_rx_off( void )
 
 char softuart_getchar( void )
 {
-	char ch;
+	char ch, ret;
 
 	while ( qout == qin ) {
-		idle();
+		ret = idle();
+		if(ret)
+			break;
 	}
-	ch = inbuf[qout];
-	if ( ++qout >= SOFTUART_IN_BUF_SIZE ) {
-		qout = 0;
-	}
+	if(ret == 0)
+	{
+		ch = inbuf[qout];
+		if ( ++qout >= SOFTUART_IN_BUF_SIZE ) {
+			qout = 0;
+		}
 
-	return( ch );
+		return( ch );
+	}else
+		return('\n');
 }
 
 unsigned char softuart_kbhit( void )

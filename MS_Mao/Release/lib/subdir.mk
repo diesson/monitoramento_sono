@@ -7,21 +7,18 @@ C_SRCS += \
 ../lib/avr_gpio.c \
 ../lib/avr_i2c.c \
 ../lib/avr_onewire.c \
-../lib/avr_spi.c \
 ../lib/avr_usart.c 
 
 OBJS += \
 ./lib/avr_gpio.o \
 ./lib/avr_i2c.o \
 ./lib/avr_onewire.o \
-./lib/avr_spi.o \
 ./lib/avr_usart.o 
 
 C_DEPS += \
 ./lib/avr_gpio.d \
 ./lib/avr_i2c.d \
 ./lib/avr_onewire.d \
-./lib/avr_spi.d \
 ./lib/avr_usart.d 
 
 

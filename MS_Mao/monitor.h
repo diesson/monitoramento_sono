@@ -15,6 +15,7 @@
 #include "lib/avr_timer.h"
 #include "oximetro.h"
 #include "accelerometer.h"
+#include "temperatura.h"
 
 // Define
 #define P_VERM PB0
@@ -27,7 +28,8 @@
 #define P_ganhoA3 PD7
 
 #define CTRL_LED GPIO_B
-#define TEMPO_SLEEP  1//1000//30000
+#define CTRL_PGA GPIO_D
+#define TEMPO_SLEEP  1000//1//1000//30000
 #define N_AMOSTRAS 10
 #define VALOR_COMPARACAO 100
 

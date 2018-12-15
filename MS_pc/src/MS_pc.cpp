@@ -15,6 +15,7 @@
 #include <termios.h>
 #include <unistd.h>
 #include <string.h>
+#include <ctime>
 
 using namespace std;
 
@@ -41,15 +42,30 @@ int main() {
 
 	serialInit(fd);
 
-
 	while (1) {
 		while ((bytesRead = read(fd, &buffer, 32))) {
 			fp = fopen("out.csv", "a+");
+
 			for (int i = 0; i < bytesRead; i++) {
-				std::cout << buffer[i];
-				fprintf(fp, "%c", buffer[i]);
+
+				if(buffer[i] == '\r')
+				{
+					time_t t = time(0);
+					tm* now = localtime(&t);
+
+					sprintf(buffer, " %02d:%02d:%02d;\n", now->tm_hour, now->tm_min, now->tm_sec);
+					for (int i = 0; i < 12; i++) {
+						cout << buffer[i];
+						fprintf(fp, "%c", buffer[i]);
+					}
+				}else
+				{
+					cout << buffer[i];
+					fprintf(fp, "%c", buffer[i]);
+				}
+
 			}
-			std::cout.flush();
+			cout.flush();
 			fclose(fp);
 		}
 	}

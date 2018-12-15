@@ -18,7 +18,7 @@
 #include "lib/softuart.h"
 
 // Define
-#define TEMPO_SLEEP  30000//1000
+#define TEMPO_SLEEP  1000//30000
 #define N_AMOSTRAS 10
 #define VALOR_COMPARACAO 100
 

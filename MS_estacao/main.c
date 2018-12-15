@@ -27,7 +27,7 @@ int main(){
 	controleInit();
 	sei();
 
-	fprintf(usart, "temperatura; umidade; luz; ruido;\n\r");
+	fprintf(usart, "batimentos; temp. corporal; acelerometro; oximetro; temp. ambiente; umidade; luz; ruido; hora;\n");
 
 	_delay_ms(100);
 

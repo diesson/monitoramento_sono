@@ -18,7 +18,7 @@
 #define B115200  (F_CPU/16/115200-1)
 
 #define TAM_USART 16
-#define CHAR_USART '.'
+#define CHAR_USART '\r'
 
 /* Registers structure definition */
 typedef struct{

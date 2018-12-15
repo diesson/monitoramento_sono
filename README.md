@@ -121,8 +121,6 @@ Figura 9. Circuito implementado.
 
 ### Acelerometro:
 
-### Cinta de monitoramento respiratório:
-
 ### Sensor de temperatura corporal:
 
 ### Microcontrolador e sistema:
@@ -143,9 +141,10 @@ No estado “*sleep*” o microcontrolador é desperto a cada 10 ms, devido a um
 
 ### Resultados da luva de monitoramento de sinais vitais:
 
+
 ## Estação base para monitoramento do ambiente:
 
-A estação base para o monitoramento do ambiente, foi concebida para que o usuário pudesse ter um *feedback* sobre as possíveis causas da sua noite de sono mal dormida, complementando os dados da luva. Esta estação possui três sensores para a medição de quatro importantes medidas do ambiente, a temperatura, a umidade, a luminosidade e o nível de ruído. Para a programação do microcontrolador, optou-se, semelhante a luva de monitoramento de sinais vitais, pela criação de uma máquina de estados, contendo 3 estados básicos de leitura (temperatura, luz e ruído) e um estado de processamento, de envio da informação e de estado de *sleep*.
+A estação base para o monitoramento do ambiente, foi concebida para que o usuário pudesse ter um *feedback* sobre as possíveis causas da sua noite de sono mal dormida, complementando os dados da luva. Esta estação possui três sensores para a medição de quatro importantes medidas do ambiente, a temperatura, a umidade, a luminosidade e o nível de ruído. Para a programação do microcontrolador, optou-se, semelhante a luva de monitoramento de sinais vitais, pela criação de uma máquina de estados, contendo 3 estados básicos de leitura (temperatura, luz e ruído) e um estado de envio da informação e outro de *sleep*.
 
 ### Sensor de temperatura e umidade: 
 Visando fazer a medição dos níveis de umidade do ar e da temperatura ambiente, optou-se pela utilização de um DHT22, um sensor de temperatura e humidade que utiliza comunicação 1-wire com o microcontrolador. Tratando-se de um sensor simples, não necessitando de inicialização, apenas que seja requisitado um determinado dado em um endereço específico de sua memória. A Figura 11 apresenta o protótipo utilizado para testes do sensor. 
@@ -166,7 +165,6 @@ Figura 12. Circuito utilizado para a medição dos níveis de luminosidade.
 Após adquirido os dados proveniente do DHT22, em nosso microcontrolador, é realizada a medição da tensão proveniente do LDR, utilizando o seu ADC, para que assim, em seguida, essa informação seja enviada para o computador do usuário.
 
 ### Sensor de detecção do nível de ruído:
-
 Devido a simplicidade da criação desse sensor, optou-se pela montagem do mesmo. Este circuito consiste, basicamente, em um microfone de eletreto com um bloco de ganho e um bloco de comparação, onde pode ser ajustado o nível de tensão (ou a amplitude máxima do ruído) para a comparação. A Figura 13 apresenta o circuito de ganho e comparação utilizado.
 
 ![Polissonografia_13](./images/figura13.png "Circuito de ganho e comparação simulado para a detecção de ruído")
@@ -176,8 +174,16 @@ Figura 13. Circuito de ganho e comparação simulado para a detecção de ruído
 Em seguida, após simulação, montagem e testes, tendo realizado alguns ajustes de valores de componentes, iniciou-se testes junto ao microcontrolador. Ao atingir determinado valor de tensão com o microfone, o bloco de comparação irá chavear para nível lógico alto, ativando uma interrupção por borda de subida no microcontrolador, e assim, podendo ser contado a quantidade de vezes que este ruído ocorreu dentro de um determinado período de tempo. O período de contagem estabelecido foi de 5 minutos, enquanto o microcontrolador está em estado de sleep, pois, mesmo nesse estado, as interrupções ainda estão ativas. Após aquisição do nível de luminosidade, o microcontrolador salva na estrutura de dados a quantidade de interrupções feitas no período estabelecido, e assim, em seguida é enviado essas informações para o usuário. 
 
 ### Microcontrolador e comunicação:
+Como mencionado, o código básico utilizado para a estação base para monitoramento do ambiente trata-se de uma máquina de estados, que permanece em estado de *sleep* por um periodo de cinco minutos, e, em seguida, começa um ciclo de aquisição dos dados provenientes dos sensores. Após a aquisição, o microcontrolador entra no estado de envio de informação, onde o mesmo requisita os dados obtidos pela luva de monitoramento de sinais vitais. Essa requisição é feita através do envio de um determinado caracter a cada determinado periodo de tempo, e, em paralelo, a luva de monitoramento de sinais vitais, após realizar as suas medições e entrar em seu proprio estado de envio, aguarda o recebimento do caracter, para que assim haja um sincronismo entre ambos, e em seguida, envia todos os dados obtidos pelo oximetro, acelerômetro e pelo sensor de temperatura. Assim, após recebido as informações provenientes da luva de monitoramento de sinais vitais, os dados são concatenados com as informações obtidas pela própria estação de monitoramento de ambiente e enviadas via USB, utilizando o protocólo de comunicação USART. 
+
+Para a comunicação com a luva optou-se pela utilização de um modulo *Bluetooth*, que também utiliza um protocólo USART. Assim, houve a necessidade de se utilizar uma USART implementada via *software*, pois o microcontrolador utilizado possui apenas uma. 
+
 
 ### Protótipo da estação base: 
+
+
+### Resultados e problemas obtidos
+
 
 ## Autores
 * Diesson Stefano Allebrandt
