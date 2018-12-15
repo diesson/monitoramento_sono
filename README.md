@@ -95,7 +95,6 @@ Figura 5. Posicionamento dos LEDs e fotodetector.
 
 O diagrama de blocos do circuito do oxímetro pode ser observado na Figura 6.
 
-APRESENTAR A ESTRUTURA DE BLOCOS DO OXÍMETRO
 ![Polissonografia_6](./images/figura6.png "Estrutura de blocos do oxímetro")
 
 Figura 6. Estrutura de blocos do oxímetro.
@@ -141,6 +140,7 @@ No estado “*sleep*” o microcontrolador é desperto a cada 10 ms, devido a um
 
 ### Resultados da luva de monitoramento de sinais vitais:
 
+### Sistema de alimentação:
 
 ## Estação base para monitoramento do ambiente:
 
