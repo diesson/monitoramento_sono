@@ -1,4 +1,4 @@
-# Monitoramento sono
+﻿# Monitoramento sono
 Este projeto tem por objetivo o desenvolvimento de um sistema de monitoramento do sono, desenvolvido na disciplina de Projeto Integrador 3 (PIN22107) do curso de graduação em Engenharia Eletrônica do Instituto Federal de Educação, Ciência e Tecnologia de Santa Catarina (IFSC). Este projeto foi dividido em dois subsistemas básicos, uma luva de monitoramento e acompanhamento de atividades noturna e uma estação base para monitoramento do ambiente. 
 
 ## Especificações do projeto
@@ -201,3 +201,5 @@ Figura 16. Máquina de estados utilizada na estação de monitoramento do ambien
 * Marcos Vinícius Leal da Silva
 
 ## Bibliografia
+
+TESTE -MARCOS
