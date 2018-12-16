@@ -3,7 +3,7 @@ Este projeto tem por objetivo o desenvolvimento de um sistema de monitoramento d
 
 ## Especificações do projeto
 * Monitoramento dos principais sinais necessarios para a análise do sono.
-* Desenvolvimento de um circuito de baixo consumo energético alimentado por batería.
+* Desenvolvimento de um circuito de baixo consumo energético alimentado por bateria.
 * Entrega dos dados ao usuário via rede wireless. 
 
 ## Etapas de desenvolvimento do projeto
@@ -99,7 +99,7 @@ O diagrama de blocos do circuito do oxímetro pode ser observado na Figura 6.
 
 Figura 6. Estrutura de blocos do oxímetro.
 
-Após obtido o sinal, o mesmo é enviado para um microcontrolador, onde é feito o cálculo da oxigenação sanguínea e dos batimentos cardíacos. Assim, para a sua amostragem, o circuito proposto consiste no acionamento do LED vermelho e do infravermelho de forma alternada utilizando um mesmo fotodetector, e em seguida, com dois circuitos integrados de amostragem (*sample and hold*) estes sinais seriam separados. Com ambos os sinais já separados, os mesmo passariam por um circuito de filtro chebyshev passa-baixa com frequência de 15 Hz, para que os sinais pudessem ser reconstruídos da melhor forma possível, eliminando possíveis discretizações geradas pelo amostrador. Neste ponto, a tensão média do sinal vermelho e infravermelho podem ser obtidos para o cálculo. 
+Após obtido o sinal, o mesmo é enviado para um microcontrolador, onde é feito o cálculo da oxigenação sanguínea e dos batimentos cardíacos. Assim, para a sua amostragem, o circuito proposto consiste no acionamento do LED vermelho e do infravermelho de forma alternada utilizando um mesmo fotodetector, e em seguida, com dois circuitos integrados de amostragem (*sample and hold*) estes sinais seriam separados. Com ambos os sinais já separados, os mesmo passariam por um circuito de filtro chebyshev passa-baixa com frequência de 15 Hz, para que os sinais pudessem ser reconstruídos da melhor forma possível, eliminando possíveis discretizações geradas pelo amostrador. Neste ponto, a tensão média do sinal vermelho e infravermelho podem ser obtidos para o cálculo da oxigenação sanguínea. 
 
 Em seguida, utilizando um filtro chebyshev passa-alta, com frequência de 50 mHz, é eliminado toda a parte CC do sinal, permitindo, assim, que seja aplicado um ganho controlável utilizando um PGA (*programmable-gain amplifier*) apenas no sinal alternado, passando, em seguida, por um circuito somador, para que o sinal fique inteiramente positivo (entre 0 e 5 V), possibilitando, assim, a amostragem do sinal pelo ADC do microcontrolador. Na figura 7 é apresentando o circuito utilizado, com os valores de componentes calculados. 
 
@@ -114,6 +114,18 @@ Com a amostragem pelo microcontrolador, pode-se realizar os cálculos da oxigena
 Figura 8. Protótipo de testes.
 
 ### Acelerometro:
+
+O acelerômetro é um sensor que serve para medir a aceleração própria de um sistema. A aceleração própria é uma medida relacionada a outro sistema em queda livre, ou seja, um acelerômetro em repouso sobre a superfície da Terra indicará uma aceleração de 1 g (9,81 m/s²) para cima pois em relação a um objeto em queda livre o mesmo está acelerado a 9,81 m/s² para cima. No setor de saúde os acelerômetros são amplamente utilizados para medir a inclinação de membros. Eles podem funcionar a partir de diversos efeitos físicos, como piezoeletricidade, piezoresistividade e capacitância.
+
+Existem acelerômetros de um eixo e de multiplos eixos para detectar magnitude e direção da aceleraçao própria do objeto, além disso os acelerômetros são também utilizados como sensores de orientação, pois é possível inferir a posição do objeto ao qual o mesmo está acoplado com base na mudança da aceleração própria.
+
+Nesse projeto foi utilizado o sensor GY-80, exibido na Figura 9, sendo uma unidade de medida inercial (do inglês (*IMU - Inertial Measurement Unit*)), que contém o acelerômetro digital de 3 eixos ADXL345. 
+
+![Polissonografia_9](./images/figura17.png "Unidade de medida inercial GY-80")
+
+Figura 9. Unidade de medida inercial GY-80.
+
+A comunicação do GY-80 é feita pela interface I2C disponível no mesmo e os sensores são endereçados individualmente, logo é possível acessar os dados dos 3 eixos do acelerômetro facilmente. 
 
 ### Sensor de temperatura corporal:
 
