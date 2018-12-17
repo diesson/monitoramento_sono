@@ -70,7 +70,7 @@ Como o ambiente em que o paciente está dormindo também influencia na qualidade
 O projeto foi dividido então em duas partes, sendo a luva de monitoramento de sinais vitais e a estação base. Ambos serão detalhados em sequência, desde os sensores utilizados até o funcionamento do sistema projetado.
 
 ## Luva de monitoramento de sinais vitais: 
-Definido os principais sinais vitais a serem obtidos, foi realizada uma análise nos diferentes tipos de sensores disponíveis, para assim, dar início ao planejamento da estrutura do *software* da luva de aquisição dos sinais do usuário. Neste projeto, optou-se pelo desenvolvimento do oxímetro de pulso, responsável pela obtenção da taxa de oxigenação sanguínea e dos batimentos cardíacos. 
+Definido os principais sinais vitais a serem obtidos, foi realizada uma análise nos diferentes tipos de sensores disponíveis, para assim, dar início ao planejamento da estrutura do *software* da luva de aquisição dos sinais do usuário. Neste projeto, optou-se pelo desenvolvimento do oxímetro de pulso, responsável pela obtenção da taxa de oxigenação sanguínea e dos batimentos cardíacos. Além disso foi decidido também fazer a leitura de um acelerômetro, com o intuito de obter a quantidade de movimentação do usuário, e de um sensor de temperatura bem próximo a pele do usuário, tendo assim uma estimativa da temperatura corporal do mesmo.
 
 ### Oximetro de pulso:
 Dentre os sinais vitais utilizados para o monitoramento da saúde do sono de um indivíduo, encontra-se o monitoramento da oxigenação sanguínea. Segundo Lima (2009), por muito tempo a medição deste sinal era realizado de forma invasiva, mas atualmente, o método mais adequado empregado nessa medição é através de um oxímetro de pulso, que utiliza a fotopletismografia.
@@ -115,11 +115,13 @@ Figura 8. Protótipo de testes.
 
 ### Acelerometro:
 
+Um bom descanso está atrelado a baixa movimentação do paciente, haja visto que o movimento indica que o paciente acordou totalmente ou parcialmente por algum desconforto. É necessário então um sensor que auxilie a identificar se o paciente está se movimentando.
+
 O acelerômetro é um sensor que serve para medir a aceleração própria de um sistema. A aceleração própria é uma medida relacionada a outro sistema em queda livre, ou seja, um acelerômetro em repouso sobre a superfície da Terra indicará uma aceleração de 1 g (9,81 m/s²) para cima pois em relação a um objeto em queda livre o mesmo está acelerado a 9,81 m/s² para cima. No setor de saúde os acelerômetros são amplamente utilizados para medir a inclinação de membros. Eles podem funcionar a partir de diversos efeitos físicos, como piezoeletricidade, piezoresistividade e capacitância.
 
 Existem acelerômetros de um eixo e de multiplos eixos para detectar magnitude e direção da aceleraçao própria do objeto, além disso os acelerômetros são também utilizados como sensores de orientação, pois é possível inferir a posição do objeto ao qual o mesmo está acoplado com base na mudança da aceleração própria.
 
-Nesse projeto foi utilizado o sensor GY-80, exibido na Figura 9, sendo uma unidade de medida inercial (do inglês (*IMU - Inertial Measurement Unit*)), que contém o acelerômetro digital de 3 eixos ADXL345. 
+Nesse projeto foi utilizado o sensor GY-80, exibido na Figura 9, sendo uma unidade de medida inercial (do inglês *IMU - Inertial Measurement Unit*), que contém o acelerômetro digital de 3 eixos ADXL345. 
 
 ![Polissonografia_9](./images/figura17.png "Unidade de medida inercial GY-80")
 
@@ -129,21 +131,47 @@ A comunicação do GY-80 é feita pela interface I2C disponível no mesmo e os s
 
 ### Sensor de temperatura corporal:
 
+Um indicativo que há algo errado no corpo humano é a temperatura do mesmo. O corpo humano possui uma estreita faixa térmica de trabalho que fica entre 36 ºC e 37,5 ºC. Portanto um aumento ou diminuição de temperatura fora da faixa indicada, conforme exibido na Figura 10, influenciará na qualidade de sono de uma pessoa.
+
+![Polissonografia_10](./images/figura18.png "Faixas de temperatura corporal")
+
+Figura 10. Faixas de temperatura corporal.
+
+Nesse projeto foi utilizado o sensor de temperatura e pressão BMP085, presente na *IMU* GY-80 (Figura 9). É importante ressaltar que foi feita somente a leitura da temperatura do mesmo, descartando então a pressão. De forma similar ao discutido no tópico de acelerômetro, fez-se a leitura da temperatura pela interface I2C disponível no sensor GY-80.
+
 ### Microcontrolador e sistema:
 
 Para este projeto, optou-se pela utilização do microcontrolador ATmega328p programado em linguagem C, devido a familiaridade e o fácil uso do microcontrolador. O ATmega328p, segundo Lima e Villaça (2012), é um microcontrolador de 8 bits de baixa potência, com arquitetura RISC avançada. 
 
-Para o programa do microcontrolador, optou-se pela elaboração de uma máquina de estados, como apresentado na Figura 9, utilizando um ponteiro de função. Esta máquina de estados permite que o microcontrolador faças as aquisições necessárias, e, logo em seguida, entre em um estado de baixo consumo (*sleep*).
+Para o programa do microcontrolador, optou-se pela elaboração de uma máquina de estados, como apresentado na Figura 11, utilizando um ponteiro de função. Esta máquina de estados permite que o microcontrolador faças as aquisições necessárias, e, logo em seguida, entre em um estado de baixo consumo (*sleep*).
 
-![Polissonografia_9](./images/figura9.png "Máquina de estados da luva de monitoramento corporal")
+![Polissonografia_11](./images/figura9.png "Máquina de estados da luva de monitoramento corporal")
 
-Figura 9. Máquina de estados da luva de monitoramento corporal.
+Figura 11. Máquina de estados da luva de monitoramento corporal.
 
-Após a inicialização do microcontrolador, o mesmo entra na função de inicialização da máquina de estados, responsável pela inicialização das variáveis, dos temporizadores (*timers*) e do ADC (*analog to digital converter*). Em seguida, os estados começam a operar, tendo início pelo estado “vermelho”, seguido pelos estados “infravermelho” e “processamento”. Estes estados são responsáveis pela leitura e processamento dos dados proveniente do oxímetro. Neste processo, é realizada a aquisição dos sinais vermelho e infravermelho, para ser calculado os níveis de oxigenação do sangue e feito a detecção de pico do sinal, para assim, ser calculado o período do sinal, para que seja obtido o número de batimentos por minuto. 
+Após a inicialização do microcontrolador, o mesmo entra na função de inicialização da máquina de estados, responsável pela inicialização das variáveis, dos temporizadores (*timers*) e do ADC (*analog to digital converter*). Em seguida, os estados começam a operar, tendo início pelo estado “vermelho”, seguido pelos estados “infravermelho” e “processamento”. Esses estados são responsáveis pela leitura e processamento dos dados proveniente do oxímetro. Neste processo são realizadas as aquisições dos sinais vermelho e infravermelho, para ser calculado os níveis de oxigenação do sangue, e feito a detecção de pico do sinal. Com base no tempo decorrido entre a detecção dos picos foi possível obter o período do sinal, para que seja obtido o número de batimentos por minuto. 
 
-Após detectado um período, ou seja, após ser identificado dois picos do sinal, os dados proveniente dessas leituras (valores de tensão máxima, valores de tensão mínima, valores de tensão média e valor do período do sinal em milissegundos) são armazenados, e então, alterna-se para o estado “enviar”, onde é realizado os cálculos e enviado as informações para o computador do usuário e, em seguida, o microcontrolador alterna para o estado “*sleep*”, onde é colocado no modo de economia de energia.
+Após detectado um período, ou seja, após ser identificado dois picos do sinal, os dados proveniente dessas leituras (valores de tensão máxima, valores de tensão mínima, valores de tensão média e valor do período do sinal em milissegundos) são armazenados, e então, alterna-se para o estado “enviar”, onde são realizados os cálculos e enviado as informações para a estação base e, em seguida, o microcontrolador alterna para o estado “*sleep*”, onde é colocado no modo de economia de energia.
 
 No estado “*sleep*” o microcontrolador é desperto a cada 10 ms, devido a um timer, e assim, o microcontrolador verifica se houve alguma mudança nos valores do acelerômetro desde a sua última leitura. Em caso afirmativo, o mesmo entra no estado de “movimento” onde é registrado a mudança, para que então retorne para o estado de economia de energia. Esse ciclo continua se repetindo até que se tenha completado um tempo de 5 minutos, onde o mesmo desperta e entra em no estado “temperatura”, para que seja feita a leitura da temperatura corporal do usuário, e em seguida, retorna para os estados de aquisição do oxímetro. Este período de aquisição a cada 5 minutos foi arbitrado com base nos dispositivos de monitoramento de sono já presentes no mercado. 
+
+### Protótipo da luva de monitoramento de sinais vitais:
+
+![Polissonografia_12](./images/figura19.png "Esquemático do amostrador e dos filtros para condicionamento do sinal do oxímetro")
+
+Figura 12. Esquemático do amostrador e dos filtros para condicionamento do sinal do oxímetro.
+
+![Polissonografia_13](./images/figura20.png "Layout da placa do amostrador e dos filtros para condicionamento do sinal do oxímetro")
+
+Figura 13. *Layout* da placa do amostrador (*sample and hold*) e dos filtros para condicionamento do sinal do oxímetro.
+
+![Polissonografia_14](./images/figura21.png "Esquemático do PGA e do somador para o condicionamento do sinal do oxímetro")
+
+Figura 14. Esquemático do PGA e do somador para o condicionamento do sinal do oxímetro.
+
+![Polissonografia_15](./images/figura22.png "Layout do PGA e do somador para o condicionamento do sinal do oxímetro")
+
+Figura 15. *Layout* do PGA e do somador para o condicionamento do sinal do oxímetro.
 
 ### Resultados da luva de monitoramento de sinais vitais:
 
@@ -163,16 +191,16 @@ Figura 12. Consumo de energia do Bluetooth durante espera.
 
 ## Estação base para monitoramento do ambiente:
 
-A estação base para o monitoramento do ambiente, foi concebida para que o usuário pudesse ter um *feedback* sobre as possíveis causas da sua noite de sono mal dormida, complementando os dados da luva. Esta estação possui três sensores para a medição de quatro importantes medidas do ambiente, a temperatura, a umidade, a luminosidade e o nível de ruído. Para a programação do microcontrolador, optou-se, semelhante a luva de monitoramento de sinais vitais, pela criação de uma máquina de estados, contendo 3 estados básicos de leitura (temperatura, luz e ruído) e um estado de envio da informação e outro de *sleep*.
+A estação base para o monitoramento do ambiente foi concebida para que o usuário pudesse ter um *feedback* sobre as possíveis causas da sua noite de sono mal dormida, complementando os dados da luva. Essa estação possui três sensores para a medição de quatro importantes medidas do ambiente: temperatura; umidade; luminosidade; nível de ruído. Para a programação do microcontrolador (ATMega328P), optou-se, semelhante a luva de monitoramento de sinais vitais, pela criação de uma máquina de estados contendo 3 estados básicos de leitura (temperatura, luz e ruído), um estado de envio da informação e outro de *sleep*.
 
 ### Sensor de temperatura e umidade: 
-Visando fazer a medição dos níveis de umidade do ar e da temperatura ambiente, optou-se pela utilização de um DHT22, um sensor de temperatura e humidade que utiliza comunicação 1-wire com o microcontrolador. Tratando-se de um sensor simples, não necessitando de inicialização, apenas que seja requisitado um determinado dado em um endereço específico de sua memória. A Figura 11 apresenta o protótipo utilizado para testes do sensor. 
+Visando fazer a medição dos níveis de umidade do ar e da temperatura ambiente, optou-se pela utilização de um DHT22, um sensor de temperatura e umidade que utiliza comunicação 1-wire com o microcontrolador. Tratando-se de um sensor simples, não necessitando de inicialização, apenas que seja requisitado um determinado dado em um endereço específico de sua memória. A Figura 11 apresenta o protótipo utilizado para testes do sensor. 
 
 ![Polissonografia_13](./images/figura13.png "Protótipo utilizado para testes do sensor")
 
 Figura 13. Protótipo utilizado para testes do sensor.
 
-Em nosso microcontrolador, a cada 5 minutos, após o mesmo sair do estado de sleep, requisita os dados do DHT22, recebendo as informações de temperatura e umidade ambiente, e assim, armazena em uma estrutura de dados, que posteriormente é enviado para o computador do usuário. 
+Programou-se então o microcontrolador para a cada 5 minutos, após sair do estado de *sleep*, requisitar os dados do DHT22, recebendo as informações de temperatura e umidade ambiente. Armazenou-se então esses valores em uma estrutura de dados, que posteriormente é enviada para o computador do usuário via USART. 
 
 ### Sensor de luminosidade:
 Para o monitoramento da luz ambiente, optou-se inicialmente pela utilização de um TEMT6000, por possuir uma melhor precisão na aquisição da variação de luminosidade. Mas, devido a sensor já possuir um resistor de 10 kΩ para o seu ganho, o mesmo dificultava a medição da luminosidade em baixos níveis de luz. Assim, após testes, optou-se pela substituição deste sensor pela utilização de um LDR juntamente com um resistor de 68 kΩ, fornecendo niveis de tensão melhores para baixa luminosidade, saturando em niveis elevados (o que não nos gera nenhum impecilho, uma vez que a utilização do circuito é voltado para ambientes escuros). O circuito utilizado para a medição dos níveis de luminosidade é apresentado na Figura 12. 
