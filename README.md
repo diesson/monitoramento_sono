@@ -43,7 +43,6 @@ A polissonografia é o padrão-ouro para diagnóstico de distúrbios do sono em 
 
 De forma geral, a polissonografia é realizada em uma clínica especializada em sono ou de neurologia e o paciente precisa permanecer sob observação durante uma noite de sono no hospital para aquisição dos sinais vitais mencionados, conforme exibe a Figura 1. O preço desse exame pode variar de R$800,00 a R$1.200,00, dependendo do local e parâmetros avaliados durante o exame. Existem casos de monitoramento domiciliar, com aparelhos portáteis como o ilustrado na Figura 2, sendo mais simples que os realizados nos hospitais, todavia úteis em casos específicos.
 
-
 ![Polissonografia_1](./images/figura1.png "Exame de polissonografia em clínica especializada")
 
 Figura 1. Exame de polissonografia em clínica especializada.
@@ -51,7 +50,6 @@ Figura 1. Exame de polissonografia em clínica especializada.
 ![Polissonografia_2](./images/figura2.png "Exame de polissonografia com aparelho portátil")
 
 Figura 2. Exame de polissonografia com aparelho portátil.
-
 
 Com base nos sinais vitais mencionados no exame de polissonografia, foi projetado um sistema que possibilitasse o monitoramento de alguns desses sinais, além do monitoramento do ambiente em que a pessoa dorme, para posterior análise por um profissional da área do sono. 
 
@@ -101,17 +99,13 @@ Figura 6. Estrutura de blocos do oxímetro.
 
 Após obtido o sinal, o mesmo é enviado para um microcontrolador, onde é feito o cálculo da oxigenação sanguínea e dos batimentos cardíacos. Assim, para a sua amostragem, o circuito proposto consiste no acionamento do LED vermelho e do infravermelho de forma alternada utilizando um mesmo fotodetector, e em seguida, com dois circuitos integrados de amostragem (*sample and hold*) estes sinais seriam separados. Com ambos os sinais já separados, os mesmo passariam por um circuito de filtro chebyshev passa-baixa com frequência de 15 Hz, para que os sinais pudessem ser reconstruídos da melhor forma possível, eliminando possíveis discretizações geradas pelo amostrador. Neste ponto, a tensão média do sinal vermelho e infravermelho podem ser obtidos para o cálculo da oxigenação sanguínea. 
 
-Em seguida, utilizando um filtro chebyshev passa-alta, com frequência de 50 mHz, é eliminado toda a parte CC do sinal, permitindo, assim, que seja aplicado um ganho controlável utilizando um PGA (*programmable-gain amplifier*) apenas no sinal alternado, passando, em seguida, por um circuito somador, para que o sinal fique inteiramente positivo (entre 0 e 5 V), possibilitando, assim, a amostragem do sinal pelo ADC do microcontrolador. Na figura 7 é apresentando o circuito utilizado, com os valores de componentes calculados. 
+Em seguida, utilizando um filtro chebyshev passa-alta com frequência de 50 mHz, é eliminado toda a parte CC do sinal, permitindo, assim, que seja aplicado um ganho controlável utilizando um PGA (*programmable-gain amplifier*) apenas no sinal alternado. Ao final tem-se um circuito somador, para que o sinal fique inteiramente positivo (entre 0 e 5 V), possibilitando, assim, a amostragem do sinal pelo ADC do microcontrolador. Na figura 7 é apresentando o circuito utilizado, com os valores de componentes calculados. 
 
 ![Polissonografia_7](./images/figura7.png "Circuito do oximetro com valores calculados")
 
 Figura 7. Circuito do oximetro com valores calculados.
 
-Com a amostragem pelo microcontrolador, pode-se realizar os cálculos da oxigenação sanguínea e, utilizando um algoritmo de detecção de pico, realizar a contagem dos batimentos cardíacos, com base no período do sinal amostrado. Na Figura 8 pode ser observado a montagem do circuito de teste.
-
-![Polissonografia_8](./images/figura8.png "Protótipo de testes")
-
-Figura 8. Protótipo de testes.
+Com a amostragem pelo microcontrolador, pode-se realizar os cálculos da oxigenação sanguínea e, utilizando um algoritmo de detecção de pico, realizar a contagem dos batimentos cardíacos, com base no período do sinal amostrado.
 
 ### Acelerometro:
 
@@ -121,21 +115,21 @@ O acelerômetro é um sensor que serve para medir a aceleração própria de um 
 
 Existem acelerômetros de um eixo e de multiplos eixos para detectar magnitude e direção da aceleraçao própria do objeto, além disso os acelerômetros são também utilizados como sensores de orientação, pois é possível inferir a posição do objeto ao qual o mesmo está acoplado com base na mudança da aceleração própria.
 
-Nesse projeto foi utilizado o sensor GY-80, exibido na Figura 9, sendo uma unidade de medida inercial (do inglês *IMU - Inertial Measurement Unit*), que contém o acelerômetro digital de 3 eixos ADXL345. 
+Nesse projeto foi utilizado o sensor GY-80, exibido na Figura 8, sendo uma unidade de medida inercial (do inglês *IMU - Inertial Measurement Unit*), que contém o acelerômetro digital de 3 eixos ADXL345. 
 
-![Polissonografia_9](./images/figura17.png "Unidade de medida inercial GY-80")
+![Polissonografia_8](./images/figura17.png "Unidade de medida inercial GY-80")
 
-Figura 9. Unidade de medida inercial GY-80.
+Figura 8. Unidade de medida inercial GY-80.
 
 A comunicação do GY-80 é feita pela interface I2C disponível no mesmo e os sensores são endereçados individualmente, logo é possível acessar os dados dos 3 eixos do acelerômetro facilmente. 
 
 ### Sensor de temperatura corporal:
 
-Um indicativo que há algo errado no corpo humano é a temperatura do mesmo. O corpo humano possui uma estreita faixa térmica de trabalho que fica entre 36 ºC e 37,5 ºC. Portanto um aumento ou diminuição de temperatura fora da faixa indicada, conforme exibido na Figura 10, influenciará na qualidade de sono de uma pessoa.
+Um indicativo que há algo errado no corpo humano é a temperatura do mesmo. O corpo humano possui uma estreita faixa térmica de trabalho que fica entre 36 ºC e 37,5 ºC. Portanto um aumento ou diminuição de temperatura fora da faixa indicada, conforme exibido na Figura 9, influenciará na qualidade de sono de uma pessoa.
 
-![Polissonografia_10](./images/figura18.png "Faixas de temperatura corporal")
+![Polissonografia_9](./images/figura18.png "Faixas de temperatura corporal")
 
-Figura 10. Faixas de temperatura corporal.
+Figura 9. Faixas de temperatura corporal.
 
 Nesse projeto foi utilizado o sensor de temperatura e pressão BMP085, presente na *IMU* GY-80 (Figura 9). É importante ressaltar que foi feita somente a leitura da temperatura do mesmo, descartando então a pressão. De forma similar ao discutido no tópico de acelerômetro, fez-se a leitura da temperatura pela interface I2C disponível no sensor GY-80.
 
@@ -143,51 +137,69 @@ Nesse projeto foi utilizado o sensor de temperatura e pressão BMP085, presente 
 
 Para este projeto, optou-se pela utilização do microcontrolador ATmega328p programado em linguagem C, devido a familiaridade e o fácil uso do microcontrolador. O ATmega328p, segundo Lima e Villaça (2012), é um microcontrolador de 8 bits de baixa potência, com arquitetura RISC avançada. 
 
-Para o programa do microcontrolador, optou-se pela elaboração de uma máquina de estados, como apresentado na Figura 11, utilizando um ponteiro de função. Esta máquina de estados permite que o microcontrolador faças as aquisições necessárias, e, logo em seguida, entre em um estado de baixo consumo (*sleep*).
+Para o programa do microcontrolador, optou-se pela elaboração de uma máquina de estados, como apresentado na Figura 10, utilizando um ponteiro de função. Esta máquina de estados permite que o microcontrolador faças as aquisições necessárias, e, logo em seguida, entre em um estado de baixo consumo (*sleep*).
 
-![Polissonografia_11](./images/figura9.png "Máquina de estados da luva de monitoramento corporal")
+![Polissonografia_10](./images/figura9.png "Máquina de estados da luva de monitoramento corporal")
 
-Figura 11. Máquina de estados da luva de monitoramento corporal.
+Figura 10. Máquina de estados da luva de monitoramento corporal.
 
-Após a inicialização do microcontrolador, o mesmo entra na função de inicialização da máquina de estados, responsável pela inicialização das variáveis, dos temporizadores (*timers*) e do ADC (*analog to digital converter*). Em seguida, os estados começam a operar, tendo início pelo estado “vermelho”, seguido pelos estados “infravermelho” e “processamento”. Esses estados são responsáveis pela leitura e processamento dos dados proveniente do oxímetro. Neste processo são realizadas as aquisições dos sinais vermelho e infravermelho, para ser calculado os níveis de oxigenação do sangue, e feito a detecção de pico do sinal. Com base no tempo decorrido entre a detecção dos picos foi possível obter o período do sinal, para que seja obtido o número de batimentos por minuto. 
+Após a inicialização do microcontrolador, o mesmo entra na função de inicialização da máquina de estados, responsável pela inicialização das variáveis, dos temporizadores (*timers*) e do ADC (*analog to digital converter*). Em seguida os estados começam a operar tendo início pelo estado “vermelho”, seguido pelos estados “infravermelho” e “processamento”. Esses estados são responsáveis pela leitura e processamento dos dados proveniente do oxímetro. Neste processo são realizadas as aquisições dos sinais vermelho e infravermelho, para ser calculado os níveis de oxigenação do sangue, e feito a detecção de pico do sinal. Com base no tempo decorrido entre a detecção dos picos foi possível obter o período do sinal, para que seja obtido o número de batimentos por minuto. 
 
-Após detectado um período, ou seja, após ser identificado dois picos do sinal, os dados proveniente dessas leituras (valores de tensão máxima, valores de tensão mínima, valores de tensão média e valor do período do sinal em milissegundos) são armazenados, e então, alterna-se para o estado “enviar”, onde são realizados os cálculos e enviado as informações para a estação base e, em seguida, o microcontrolador alterna para o estado “*sleep*”, onde é colocado no modo de economia de energia.
+Após detectado um período, ou seja, após ser identificado dois picos do sinal, os dados provenientes dessas leituras (valores de tensão máxima, tensão mínima, tensão média e período do sinal em milissegundos) são armazenados, e então, alterna-se para o estado “enviar”, onde são realizados os cálculos e enviado as informações para a estação base.  Após finalizar o envio o microcontrolador alterna para o estado “*sleep*”, onde é colocado no modo de economia de energia.
 
-No estado “*sleep*” o microcontrolador é desperto a cada 10 ms, devido a um timer, e assim, o microcontrolador verifica se houve alguma mudança nos valores do acelerômetro desde a sua última leitura. Em caso afirmativo, o mesmo entra no estado de “movimento” onde é registrado a mudança, para que então retorne para o estado de economia de energia. Esse ciclo continua se repetindo até que se tenha completado um tempo de 5 minutos, onde o mesmo desperta e entra em no estado “temperatura”, para que seja feita a leitura da temperatura corporal do usuário, e em seguida, retorna para os estados de aquisição do oxímetro. Este período de aquisição a cada 5 minutos foi arbitrado com base nos dispositivos de monitoramento de sono já presentes no mercado. 
+No estado “*sleep*” o microcontrolador é desperto a cada 10 ms, devido a um *timer*, para verificar se houve alguma mudança nos valores do acelerômetro desde a sua última leitura. Em caso afirmativo, o mesmo entra no estado de “movimento” onde é registrado a mudança, para que então retorne para o estado de economia de energia. Esse ciclo continua se repetindo até que se tenha completado um tempo de 5 minutos, onde o mesmo desperta e entra em no estado “temperatura”, para que seja feita a leitura da temperatura corporal do usuário, e em seguida, retorna para os estados de aquisição do oxímetro. Este período de aquisição a cada 5 minutos foi arbitrado com base nos dispositivos de monitoramento de sono já presentes no mercado. 
 
 ### Protótipo da luva de monitoramento de sinais vitais:
 
-![Polissonografia_12](./images/figura19.png "Esquemático do amostrador e dos filtros para condicionamento do sinal do oxímetro")
+Com base nos circuitos e sensores discutidos acima foram montadas duas placas para aquisição do sinal do oxímetro e utilizou-se o módulo GY-80 para leitura do acelerômetro e da temperatura corporal. 
 
-Figura 12. Esquemático do amostrador e dos filtros para condicionamento do sinal do oxímetro.
+A placa do condicionamento do sinal oxímetro foi dividida em duas pois utilizou-se o amplificador operacional TL084, que possui 4 amplificadores. Logo o amostrador (*sample and hold*) e os filtros passa-baixa (PB) e passa-alta (PA) foram implementados na primeira placa, enquanto o PGA e a estrutura com somador foi implementada na segunda placa.
 
-![Polissonografia_13](./images/figura20.png "Layout da placa do amostrador e dos filtros para condicionamento do sinal do oxímetro")
+As Figuras 11 e 12 exibem o esquemático e o *layout*, respectivamente, da primeira placa com o amostrador e os filtros PB e PA. A alimentação dessa placa foi feita por uma fonte linear de bancada simétrica de -9 V e 9 V. É importante ressaltar as conexões feitas entre os circuitos com a utilização de *jumpers* nos conectores P2, P3 e P5. Então para conectar o sinal dos sensores no amostrador é preciso fazer a coneção entre *SH* e *SINAL* no conector P2. Já para conectar o sinal do primeiro bloco de filtro PB com o segundo bloco de filtro PA é preciso fazer a coneção entre PB1s e PA1e no conector P3 para o sinal vermelho, e entre PB2s e PA2e no conector P5 para o sinal infravermelho. É possível acessar o nível DC do sinal vermelho pelo conector P3 e do sinal infravermelho pelo conector P5.
 
-Figura 13. *Layout* da placa do amostrador (*sample and hold*) e dos filtros para condicionamento do sinal do oxímetro.
+![Polissonografia_11](./images/figura19.png "Esquemático do amostrador e dos filtros para condicionamento do sinal do oxímetro")
 
-![Polissonografia_14](./images/figura21.png "Esquemático do PGA e do somador para o condicionamento do sinal do oxímetro")
+Figura 11. Esquemático do amostrador e dos filtros para condicionamento do sinal do oxímetro.
 
-Figura 14. Esquemático do PGA e do somador para o condicionamento do sinal do oxímetro.
+![Polissonografia_12](./images/figura20.png "Layout da placa do amostrador e dos filtros para condicionamento do sinal do oxímetro")
 
-![Polissonografia_15](./images/figura22.png "Layout do PGA e do somador para o condicionamento do sinal do oxímetro")
+Figura 12. *Layout* da placa do amostrador (*sample and hold*) e dos filtros para condicionamento do sinal do oxímetro.
 
-Figura 15. *Layout* do PGA e do somador para o condicionamento do sinal do oxímetro.
+Nas Figuras 13 e 14 é possível observar o esquemático e o *layout*, respectivamente, da segunda placa com os amplificadores de ganho programável (PGAs) e as estruturas com somador. As conexões entre os blocos de PGA e somador são feitas pelos conectores P1 e P2, logo conectando os sinais PGA1s e SOM1e para o sinal vermelho, e conectando os sinais PGA2s e SOM2e para o sinal infravermelho. Os sinais de saída AC do sinal vermelho e infravermelho estão acessíveis no conector P6.
+
+![Polissonografia_13](./images/figura21.png "Esquemático do PGA e do somador para o condicionamento do sinal do oxímetro")
+
+Figura 13. Esquemático do PGA e do somador para o condicionamento do sinal do oxímetro.
+
+![Polissonografia_14](./images/figura22.png "Layout do PGA e do somador para o condicionamento do sinal do oxímetro")
+
+Figura 14. *Layout* do PGA e do somador para o condicionamento do sinal do oxímetro.
+
+Na Figura 15 pode ser observado a montagem do circuito de teste com as placas desenvolvidas, o sensor GY-80 e o módulo de comunicação *bluetooth* para envio das informações para a estação base.
+
+![Polissonografia_15](./images/figura8.png "Protótipo de testes")
+
+Figura 15. Protótipo de testes.
+
+O consumo de corrente do circuito foi de 100 mA no acionamento dos LEDs vermelho e infravermelho e de 60 mA em funcionamento nos outros estados. Para utilizar uma bateria é necessário então diminuir o consumo desse circuito utilizando amplificadores operacionais de baixo consumo e diminuir a tensão de alimentação dos mesmos.
 
 ### Resultados da luva de monitoramento de sinais vitais:
 
-![Polissonografia_10](./images/figura10.png "Resultado da detecção de pico da luva de monitoramento corporal")
 
-Figura 10. Resultado da detecção de pico da luva de monitoramento corporal.
+
+![Polissonografia_16](./images/figura10.png "Resultado da detecção de pico da luva de monitoramento corporal")
+
+Figura 16. Resultado da detecção de pico da luva de monitoramento corporal.
 
 ### Sistema de alimentação:
 
-![Polissonografia_11](./images/figura11.png "Consumo de energia do Bluetooth durante comunicação")
+![Polissonografia_17](./images/figura11.png "Consumo de energia do Bluetooth durante comunicação")
 
-Figura 11. Consumo de energia do Bluetooth durante comunicação.
+Figura 17. Consumo de energia do Bluetooth durante comunicação.
 
-![Polissonografia_12](./images/figura12.png "Consumo de energia do Bluetooth durante espera")
+![Polissonografia_18](./images/figura12.png "Consumo de energia do Bluetooth durante espera")
 
-Figura 12. Consumo de energia do Bluetooth durante espera.
+Figura 18. Consumo de energia do Bluetooth durante espera.
 
 ## Estação base para monitoramento do ambiente:
 
@@ -233,6 +245,7 @@ Figura 16. Máquina de estados utilizada na estação de monitoramento do ambien
 ### Protótipo da estação base: 
 
 
+
 ### Resultados e problemas obtidos
 
 
@@ -241,5 +254,3 @@ Figura 16. Máquina de estados utilizada na estação de monitoramento do ambien
 * Marcos Vinícius Leal da Silva
 
 ## Bibliografia
-
-TESTE -MARCOS
