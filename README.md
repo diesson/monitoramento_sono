@@ -181,25 +181,39 @@ Na Figura 15 pode ser observado a montagem do circuito de teste com as placas de
 
 Figura 15. Protótipo de testes.
 
-O consumo de corrente do circuito foi de 100 mA no acionamento dos LEDs vermelho e infravermelho e de 60 mA em funcionamento nos outros estados. Para utilizar uma bateria é necessário então diminuir o consumo desse circuito utilizando amplificadores operacionais de baixo consumo e diminuir a tensão de alimentação dos mesmos.
+O consumo de corrente do circuito foi de 100 mA no acionamento dos LEDs vermelho e infravermelho e de 60 mA em funcionamento nos outros estados. Para utilizar uma bateria é necessário então diminuir o consumo desse circuito utilizando amplificadores operacionais *rail-to-rail* de baixo consumo e diminuir a tensão de alimentação dos mesmos.
 
 ### Resultados da luva de monitoramento de sinais vitais:
 
-
+As placas foram testadas e o resultado da aquisição do sinal do oxímetro pode ser visto na Figura 16. Em amarelo está o sinal proveniente do sensor infravermelho após condicionado por ambas placas confeccionadas, ou seja, esse é o sinal lido pelo ADC do microcontolador. O sinal em azul é um pino do microcontrolador para depuração do algoritmo de detecção de pico, para posterior cálculo da frequência cardíaca do usuário.
 
 ![Polissonografia_16](./images/figura10.png "Resultado da detecção de pico da luva de monitoramento corporal")
 
 Figura 16. Resultado da detecção de pico da luva de monitoramento corporal.
 
-### Sistema de alimentação:
+Foi possível observar que tanto o condicionamento do sinal quanto o algoritmo de detecção de pico funcionaram. É importante salientar que a detecção de pico funciona após a estabilização do ganho programável.
 
-![Polissonografia_17](./images/figura11.png "Consumo de energia do Bluetooth durante comunicação")
+### Sistema de comunicação (Bluetooth):
 
-Figura 17. Consumo de energia do Bluetooth durante comunicação.
+Para comunicação entre os módulos optou-se pelo bluetooth pela disponibilidade e pela familiaridade com o protocolo de comunicação. Utilizou-se o módulo HC-05, ilustrado na Figura 17, sendo necessário a conexão com 4 pinos sendo Vcc, GND, TX e RX. Os módulos HC-05 conectados na luva e na estação base foram configurados via comando AT para pareamento, sendo módulo da luva ajustado para ser escravo e com baudrate de 9600. A comunicação entre o módulo HC-05 e o microcontrolador foi feita via interface USART utilizando os pinos RX e TX dedicados do ATmega328p.
 
-![Polissonografia_18](./images/figura12.png "Consumo de energia do Bluetooth durante espera")
+![Polissonografia_17](./images/figura26.png "Consumo de energia do Bluetooth durante comunicação")
 
-Figura 18. Consumo de energia do Bluetooth durante espera.
+Figura 17. Módulo bluetooth HC-05 utilizado.
+
+É importante ressaltar que o módulo HC-05 tem um regulador de tensão e funciona com alimentação em 5 V, mas o *chip* opera em 3.3 V. Portanto o pino RX do módulo HC-05 foi conectado em um divisor resistivo ao pino TX do microcontrolador, pois esse último opera em 5 V. O pino TX do módulo HC-05 foi conectado diretamente ao pino RX do microcontrolador.
+
+Para medir a corrente de consumo do módulo bluetooth utilizou-se um resistor *shunt* de 27,4 ohms com tolerância de 1 %. A Figura 18 exibe a tensão sobre o resistor durante a comunicação entre o sistema da luva de monitoramento e a estação base. Portanto como a tensão RMS foi de 328 mV, tem-se uma corrente RMS de 11,97 mA (I = V/R = 328 mV / 24,7 = 11,97 mA). Como o módulo foi alimentado com 5 V, o consumo desse módulo durante a troca de dados foi de aproximadamente 59,85 mW.
+
+![Polissonografia_18](./images/figura11.png "Consumo de energia do Bluetooth durante comunicação")
+
+Figura 18. Consumo de energia do Bluetooth durante comunicação.
+
+Mensurou-se também a tensão no resistor *shunt* durante a espera, quando o microcontrolador entra em modo de economia de energia (estado *sleep*), conforme exibe a Figura 19. Nesse modo a corrente RMS foi de 6,86 mA, logo a potência consumida foi de 34,30 mW.
+
+![Polissonografia_19](./images/figura12.png "Consumo de energia do Bluetooth durante espera")
+
+Figura 19. Consumo de energia do Bluetooth durante espera.
 
 ## Estação base para monitoramento do ambiente:
 
