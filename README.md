@@ -220,51 +220,83 @@ Figura 19. Consumo de energia do Bluetooth durante espera.
 A estação base para o monitoramento do ambiente foi concebida para que o usuário pudesse ter um *feedback* sobre as possíveis causas da sua noite de sono mal dormida, complementando os dados da luva. Essa estação possui três sensores para a medição de quatro importantes medidas do ambiente: temperatura; umidade; luminosidade; nível de ruído. Para a programação do microcontrolador (ATMega328P), optou-se, semelhante a luva de monitoramento de sinais vitais, pela criação de uma máquina de estados contendo 3 estados básicos de leitura (temperatura, luz e ruído), um estado de envio da informação e outro de *sleep*.
 
 ### Sensor de temperatura e umidade: 
-Visando fazer a medição dos níveis de umidade do ar e da temperatura ambiente, optou-se pela utilização de um DHT22, um sensor de temperatura e umidade que utiliza comunicação 1-wire com o microcontrolador. Tratando-se de um sensor simples, não necessitando de inicialização, apenas que seja requisitado um determinado dado em um endereço específico de sua memória. A Figura 11 apresenta o protótipo utilizado para testes do sensor. 
+Visando fazer a medição dos níveis de umidade do ar e da temperatura ambiente, optou-se pela utilização de um DHT22, um sensor de temperatura e umidade que utiliza comunicação 1-wire com o microcontrolador. Tratando-se de um sensor simples, não necessitando de inicialização, apenas que seja requisitado um determinado dado em um endereço específico de sua memória. A Figura 20 apresenta o protótipo utilizado para testes do sensor. 
 
-![Polissonografia_13](./images/figura13.png "Protótipo utilizado para testes do sensor")
+![Polissonografia_20](./images/figura13.png "Protótipo utilizado para testes do sensor")
 
-Figura 13. Protótipo utilizado para testes do sensor.
+Figura 20. Protótipo utilizado para testes do sensor.
 
 Programou-se então o microcontrolador para a cada 5 minutos, após sair do estado de *sleep*, requisitar os dados do DHT22, recebendo as informações de temperatura e umidade ambiente. Armazenou-se então esses valores em uma estrutura de dados, que posteriormente é enviada para o computador do usuário via USART. 
 
 ### Sensor de luminosidade:
-Para o monitoramento da luz ambiente, optou-se inicialmente pela utilização de um TEMT6000, por possuir uma melhor precisão na aquisição da variação de luminosidade. Mas, devido a sensor já possuir um resistor de 10 kΩ para o seu ganho, o mesmo dificultava a medição da luminosidade em baixos níveis de luz. Assim, após testes, optou-se pela substituição deste sensor pela utilização de um LDR juntamente com um resistor de 68 kΩ, fornecendo niveis de tensão melhores para baixa luminosidade, saturando em niveis elevados (o que não nos gera nenhum impecilho, uma vez que a utilização do circuito é voltado para ambientes escuros). O circuito utilizado para a medição dos níveis de luminosidade é apresentado na Figura 12. 
+Para o monitoramento da luz ambiente, optou-se inicialmente pela utilização de um TEMT6000, por possuir uma melhor precisão na aquisição da variação de luminosidade. Mas, devido a sensor já possuir um resistor de 10 kΩ para o seu ganho, o mesmo dificultava a medição da luminosidade em baixos níveis de luz. Assim, após testes, optou-se pela substituição deste sensor pela utilização de um LDR juntamente com um resistor de 68 kΩ, fornecendo niveis de tensão melhores para baixa luminosidade, saturando em niveis elevados (o que não nos gera nenhum impecilho, uma vez que a utilização do circuito é voltado para ambientes escuros). O circuito utilizado para a medição dos níveis de luminosidade é apresentado na Figura 21. 
 
-![Polissonografia_14](./images/figura14.png "Circuito utilizado para a medição dos níveis de luminosidade")
+![Polissonografia_21](./images/figura14.png "Circuito utilizado para a medição dos níveis de luminosidade")
 
-Figura 14. Circuito utilizado para a medição dos níveis de luminosidade.
+Figura 21. Circuito utilizado para a medição dos níveis de luminosidade.
 
 Após adquirido os dados proveniente do DHT22, em nosso microcontrolador, é realizada a medição da tensão proveniente do LDR, utilizando o seu ADC, para que assim, em seguida, essa informação seja enviada para o computador do usuário.
 
 ### Sensor de detecção do nível de ruído:
-Devido a simplicidade da criação desse sensor, optou-se pela montagem do mesmo. Este circuito consiste, basicamente, em um microfone de eletreto com um bloco de ganho e um bloco de comparação, onde pode ser ajustado o nível de tensão (ou a amplitude máxima do ruído) para a comparação. A Figura 13 apresenta o circuito de ganho e comparação utilizado.
+Devido a simplicidade da criação desse sensor, optou-se pela montagem do mesmo. Este circuito consiste, basicamente, em um microfone de eletreto com um bloco de ganho e um bloco de comparação, onde pode ser ajustado o nível de tensão (ou a amplitude máxima do ruído) para a comparação. A Figura 22 apresenta o circuito de ganho e comparação utilizado.
 
-![Polissonografia_15](./images/figura15.png "Circuito de ganho e comparação simulado para a detecção de ruído")
+![Polissonografia_22](./images/figura15.png "Circuito de ganho e comparação simulado para a detecção de ruído")
 
-Figura 15. Circuito de ganho e comparação simulado para a detecção de ruído.
+Figura 22. Circuito de ganho e comparação simulado para a detecção de ruído.
 
 Em seguida, após simulação, montagem e testes, tendo realizado alguns ajustes de valores de componentes, iniciou-se testes junto ao microcontrolador. Ao atingir determinado valor de tensão com o microfone, o bloco de comparação irá chavear para nível lógico alto, ativando uma interrupção por borda de subida no microcontrolador, e assim, podendo ser contado a quantidade de vezes que este ruído ocorreu dentro de um determinado período de tempo. O período de contagem estabelecido foi de 5 minutos, enquanto o microcontrolador está em estado de sleep, pois, mesmo nesse estado, as interrupções ainda estão ativas. Após aquisição do nível de luminosidade, o microcontrolador salva na estrutura de dados a quantidade de interrupções feitas no período estabelecido, e assim, em seguida é enviado essas informações para o usuário. 
 
 ### Microcontrolador e comunicação:
-Como mencionado, o código básico utilizado para a estação base para monitoramento do ambiente trata-se de uma máquina de estados, que permanece em estado de *sleep* por um período de cinco minutos, e, em seguida, começa um ciclo de aquisição dos dados provenientes dos sensores. Após a aquisição, o microcontrolador entra no estado de envio de informação, onde o mesmo requisita os dados obtidos pela luva de monitoramento de sinais vitais. Essa requisição é feita através do envio de um determinado carácter a cada período de tempo, e, em paralelo, a luva de monitoramento de sinais vitais, após realizar as suas medições e entrar em seu próprio estado de envio, aguarda o recebimento desse carácter, para que assim haja um sincronismo entre ambos, e em seguida, todos os dados obtidos pelo oxímetro, acelerômetro e pelo sensor de temperatura são enviados. Após recebido as informações provenientes da luva de monitoramento de sinais vitais, os dados são concatenados com as informações obtidas pela própria estação de monitoramento de ambiente e enviadas via USB, utilizando o protocolo de comunicação USART. 
+Como mencionado, o código básico utilizado para a estação base para monitoramento do ambiente trata-se de uma máquina de estados, que permanece em estado de *sleep* por um período de cinco minutos, e, em seguida, começa um ciclo de aquisição dos dados provenientes dos sensores. Após a aquisição, o microcontrolador entra no estado de envio de informação, onde o mesmo requisita os dados obtidos pela luva de monitoramento de sinais vitais. Essa requisição é feita através do envio de um determinado carácter a cada período de tempo, e, em paralelo, a luva de monitoramento de sinais vitais, após realizar as suas medições e entrar em seu próprio estado de envio, aguarda o recebimento desse carácter, para que assim haja um sincronismo entre ambos, e em seguida, todos os dados obtidos pelo oxímetro, acelerômetro e pelo sensor de temperatura corporal são enviados. Após recebido as informações provenientes da luva de monitoramento de sinais vitais, os dados são concatenados com as informações obtidas pela própria estação de monitoramento de ambiente e enviadas via USB, utilizando o protocolo de comunicação USART. 
 
-Para a comunicação com a luva optou-se pela utilização de um módulo *Bluetooth*, que também utiliza um protocolo USART. Assim, houve a necessidade de se utilizar uma USART implementada via *software*, pois o microcontrolador utilizado possui apenas uma por *hardware*. A Figura X apresenta o diagrama da máquina de estados utilizado. 
+Para a comunicação com a luva optou-se pela utilização de um módulo *Bluetooth*, que também utiliza um protocolo USART. Assim, houve a necessidade de se utilizar uma USART implementada via *software*, pois o microcontrolador utilizado possui apenas uma por *hardware*. A Figura 23 apresenta o diagrama da máquina de estados utilizado. 
 
-![Polissonografia_16](./images/figura16.png "Máquina de estados utilizada na estação de monitoramento do ambiente")
+![Polissonografia_23](./images/figura16.png "Máquina de estados utilizada na estação de monitoramento do ambiente")
 
-Figura 16. Máquina de estados utilizada na estação de monitoramento do ambiente. 
-
+Figura 23. Máquina de estados utilizada na estação de monitoramento do ambiente. 
 
 ### Protótipo da estação base: 
 
+Utilizou-se o *hardware* da plataforma arduino para comunicação entre o microcontrolador da estação base e o computador. Portanto foi confeccionado um *shield* para conexão dos sensores discutidos acima (DHT22, LDR e circuito detector de nível de ruído) e do módulo bluetooth com o microcontrolador, conforme esquemático e *layout* exibidos nas Figuras 24 e 25 respectivamente. 
 
+![Polissonografia_24](./images/figura24.png "Esquemático do shield para estação base")
+
+Figura 24. Esquemático do shield para estação base.
+
+![Polissonografia_25](./images/figura23.png "Layout do shield para estação base")
+
+Figura 25. *Layout* do shield para estação base.
+
+A estação base funcionou conforme o esperado, conseguindo adquirir os dados dos sensores acoplados na mesma, bem como requisitar os dados do sistema da luva de monitoramento de sinais vitais, concatenar ambos os dados e enviar para o computador.
 
 ### Resultados e problemas obtidos
 
+Foi implementado também um algoritmo, desenvolvido em ambiente Linux, que monitora a porta USB em que a estação base está conectada para receber as informações enviadas pela mesma. Como resultado tem-se um arquivo com formato "*.csv*", onde os dados de batimento, oxímetro, temperatura corporal, acelerômetro, temperatura ambiente, umidade, luz, ruído e hora são organizados em uma tabela conforme exibido na Figura 26.
+
+![Polissonografia_26](./images/figura25.png "Arquivo .csv gerado a partir dos dados coletados")
+
+Figura 26. Arquivo *.csv* gerado a partir dos dados coletados.
+
+Dentre todos os dados exportados apenas o dado de oxigenação sanguínea (oxímetro) não fazia sentido físico, haja visto que o mesmo deveria estar em torno de 90 por ser uma relação de porcentagem de oxigênio no sangue. Esse erro deve-se ao cálculo implementado no microcontrolador. Todavia os parâmetros para o cálculo do mesmo (tensões médias, máximas e mínimas dos LEDs vermelhos e infravermelhos) foram adquiridos de forma correta, sendo apenas necessário a correção do cálculo.
+
+Tentou-se exportar os dados mencionados para o cálculo da oxigenação sanguínea ser feita fora do microcontrolador, evitando assim erros de calculo e truncamento, entretanto com o aumento da quantidade de informação a ser transmistida da luva para a estação base começaram a surgir problemas na comunicação bluetooth. Não foi possível corrigir esse problema há tempo, todavia constatou-se que a fonte do problema estava no buffer da comunicação serial implementado via *software*. O tamanho desse buffer era pequeno para a quantidade de informações recebidas da luva, logo os dados iniciais eram sobrescritos e a sincronização era perdida.
+
+Ocorreram problemas também na aquisição do sinal do oxímetro em diferentes pessoas, pois tanto a tonalidade de pele quanto o desgaste da mesma influenciam na passagem de luz entre o LED vermelho e infravermelho e o fotodetector. Por enquanto tem-se um potenciômetro para variar o ganho no fotodetector, mas é necessário um osciloscópio para verificar o sinal que será amostrado pelo microcontrolador.
+
+O microcontrolador demora para fazer a aquisição inicial da frequência cardíaca, pois o algoritmo de detecção de pico não funciona bem com sinais muito pequenos. O ganho implementado nos PGAs auxilia nesse caso, todavia seria interessante implementar um estado de calibração do sinal do oxímetro.
+
+A comunicação entre os módulos bluetooth está sendo feito por requisição da estação base para a luva, não havendo ainda indicação se algum pacote foi perdido ou se houve perda de pareamento. Portanto é recomendado que seja melhorado o sincronismo entre os módulos, assim como mensagens de erro para facilitar a depuração do mesmo.
+
+Por fim o consumo da luva de monitoramento excedeu as espectativas, sendo impraticável utilizar uma bateria para alimentá-lo. Não houve tempo hábil para desenvolver um circuito de baixo consumo energético alimentado por bateria, portanto maiores esforços são necessários para diminuir o consumo energético desse circuito.
 
 ## Autores
 * Diesson Stefano Allebrandt
 * Marcos Vinícius Leal da Silva
 
 ## Bibliografia
+
+AIRES, E. O que é a Polissonografia e para que serve. Disponível em: <https://www.tuasaude.com/polissonografia/>. Acesso em 20 de novembro de 2018.
+
+KANDEL. Polissonígrafo Neuron-Spectrum-AM. Disponível em: <https://kandel.com.br/equipamentos/eeg/neuron-spectrum-am/>. Acesso em 20 de novembro de 2018.
+
+ROSENFIELD, K. Novo aplicativo do Morpholio Project mede a reação humana ao ambiente construído. Disponível em: <https://www.archdaily.com.br/br/602151/novo-aplicativo-do-morpholio-project-mede-a-reacao-humana-ao-ambiente-construido>. Acesso em 22 de novembro de 2018.
